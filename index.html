@@ -35,6 +35,7 @@
 
     <!-- Chart.js for Quality Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
     <!-- SheetJS for Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -404,7 +405,8 @@
                     <!-- Selected Velg Selector -->
                     <div class="flex items-center gap-2">
                         <label class="text-xs font-semibold text-slate-600">Pilih Type Velg:</label>
-                        <select x-model.number="selectedVelgIndex" class="bg-slate-50 border border-slate-300 font-bold text-brand-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                        <select x-model="selectedVelgIndex" class="bg-slate-50 border border-slate-300 font-bold text-brand-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="all">🔄 SEMUA TYPE (All Mode - Input Sinkron)</option>
                             <template x-for="(v, idx) in velgTypes" :key="idx">
                                 <option :value="idx" x-text="v.name + ' (Total: ' + calculateVelgTotalReject(idx) + ' pcs)'"></option>
                             </template>
@@ -413,23 +415,29 @@
                 </div>
 
                 <!-- Current Selected Summary Header -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Model Velg Active</span>
-                        <p class="text-sm font-bold text-slate-900" x-text="velgTypes[selectedVelgIndex]?.name"></p>
+                        <p class="text-sm font-bold text-slate-900" x-text="isAllMode() ? 'SEMUA TYPE (All Mode)' : velgTypes[selectedVelgIndex]?.name"></p>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Total Produksi</span>
-                        <p class="text-sm font-bold text-brand-700" x-text="(velgTypes[selectedVelgIndex]?.totalProd || 0) + ' pcs'"></p>
+                        <p class="text-sm font-bold text-brand-700" x-text="(isAllMode() ? calculateGrandTotalProd() : (velgTypes[selectedVelgIndex]?.totalProd || 0)) + ' pcs'"></p>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Total Reject Saat Ini</span>
-                        <p class="text-sm font-bold text-rose-600" x-text="calculateVelgTotalReject(selectedVelgIndex) + ' pcs'"></p>
+                        <p class="text-sm font-bold text-rose-600" x-text="(isAllMode() ? calculateGrandTotalReject() : calculateVelgTotalReject(selectedVelgIndex)) + ' pcs'"></p>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Ratio Reject</span>
-                        <p class="text-sm font-bold" :class="getRatioColorClass(calculateVelgRatio(selectedVelgIndex))" x-text="calculateVelgRatio(selectedVelgIndex) + '%'"></p>
+                        <p class="text-sm font-bold" :class="getRatioColorClass(isAllMode() ? calculateGrandRatio() : calculateVelgRatio(selectedVelgIndex))" x-text="(isAllMode() ? calculateGrandRatio() : calculateVelgRatio(selectedVelgIndex)) + '%'"></p>
                     </div>
+                </div>
+
+                <!-- All Mode Sync Notice -->
+                <div x-show="isAllMode()" class="mb-4 flex items-center gap-2 bg-brand-50 border border-brand-200 text-brand-700 text-[11px] font-medium px-3 py-2 rounded-lg">
+                    <i data-lucide="repeat" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                    <span>Mode Sinkron Aktif: setiap input reject manual (+/-) akan diterapkan ke <strong>SEMUA type velg</strong> sekaligus (<span x-text="velgTypes.length"></span> type).</span>
                 </div>
 
                 <!-- Process Category Selector (Casting vs Machining) -->
@@ -438,13 +446,13 @@
                             :class="counterCategory === 'casting' ? 'bg-slate-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                             class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                         <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
-                        CASTING DEFECTS (<span x-text="calculateSubtotal(selectedVelgIndex, 'casting')"></span>)
+                        CASTING DEFECTS (<span x-text="isAllMode() ? calculateGrandSubtotal('casting') : calculateSubtotal(selectedVelgIndex, 'casting')"></span>)
                     </button>
                     <button @click="counterCategory = 'machining'" 
                             :class="counterCategory === 'machining' ? 'bg-slate-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                             class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                         <i data-lucide="cog" class="w-4 h-4 text-sky-400"></i>
-                        MACHINING DEFECTS (<span x-text="calculateSubtotal(selectedVelgIndex, 'machining')"></span>)
+                        MACHINING DEFECTS (<span x-text="isAllMode() ? calculateGrandSubtotal('machining') : calculateSubtotal(selectedVelgIndex, 'machining')"></span>)
                     </button>
                 </div>
 
@@ -457,7 +465,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <template x-for="item in getFilteredCounterDefects()" :key="counterCategory + '-' + item.id">
                         <div class="border rounded-xl p-3 flex flex-col justify-between transition hover:shadow-md bg-white"
-                             :class="getItemValue(selectedVelgIndex, counterCategory, item.id) > 0 ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200'">
+                             :class="getDisplayItemValue(item.id) > 0 ? (isAllMode() ? 'border-brand-400 bg-brand-50/40' : 'border-amber-400 bg-amber-50/40') : 'border-slate-200'">
                             
                             <div class="mb-2">
                                 <div class="flex items-center justify-between mb-1">
@@ -469,15 +477,15 @@
 
                             <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
                                 <span class="text-lg font-mono font-extrabold"
-                                      :class="getItemValue(selectedVelgIndex, counterCategory, item.id) > 0 ? 'text-amber-700' : 'text-slate-400'"
-                                      x-text="getItemValue(selectedVelgIndex, counterCategory, item.id)"></span>
+                                      :class="getDisplayItemValue(item.id) > 0 ? (isAllMode() ? 'text-brand-700' : 'text-amber-700') : 'text-slate-400'"
+                                      x-text="getDisplayItemValue(item.id)"></span>
 
                                 <div class="flex items-center space-x-1">
-                                    <button @click="adjustDefectCount(selectedVelgIndex, counterCategory, item.id, -1)" 
+                                    <button @click="isAllMode() ? adjustDefectCountAll(counterCategory, item.id, -1) : adjustDefectCount(selectedVelgIndex, counterCategory, item.id, -1)" 
                                             class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95">
                                         -
                                     </button>
-                                    <button @click="adjustDefectCount(selectedVelgIndex, counterCategory, item.id, 1)" 
+                                    <button @click="isAllMode() ? adjustDefectCountAll(counterCategory, item.id, 1) : adjustDefectCount(selectedVelgIndex, counterCategory, item.id, 1)" 
                                             class="w-10 h-8 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center justify-center shadow transition active:scale-95">
                                         +
                                     </button>
@@ -541,13 +549,22 @@
 
                 <!-- Casting vs Machining Breakdown Chart -->
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-2">
                         <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="pie-chart" class="w-4 h-4 text-sky-600"></i>
                             Distribusi Reject: Casting vs Machining
                         </h3>
                     </div>
-                    <div class="h-72 flex items-center justify-center">
+                    <!-- Ratio Tags -->
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-mono">
+                            Casting: <span x-text="calculateCategoryRatio('casting') + '%'"></span>
+                        </span>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-sky-100 text-sky-700 border border-sky-200 font-mono">
+                            Machining: <span x-text="calculateCategoryRatio('machining') + '%'"></span>
+                        </span>
+                    </div>
+                    <div class="h-64 flex items-center justify-center">
                         <canvas id="categoryChart"></canvas>
                     </div>
                 </div>
@@ -744,7 +761,7 @@
                 activeTab: 'matrix',
                 counterCategory: 'casting',
                 counterSearch: '',
-                selectedVelgIndex: 0,
+                selectedVelgIndex: '0',
                 paretoChartInstance: null,
                 categoryChartInstance: null,
 
@@ -950,6 +967,14 @@
                     return this.velgTypes.reduce((sum, _, idx) => sum + this.calculateSubtotal(idx, category), 0);
                 },
 
+                // Ratio of a category (casting/machining) against total reject (Casting + Machining)
+                calculateCategoryRatio(category) {
+                    const totalReject = this.calculateGrandTotalReject();
+                    if (!totalReject || totalReject <= 0) return '0.0';
+                    const categoryTotal = this.calculateGrandSubtotal(category);
+                    return ((categoryTotal / totalReject) * 100).toFixed(1);
+                },
+
                 getRatioColorClass(ratio) {
                     const r = parseFloat(ratio);
                     if (r > 5.0) return 'text-rose-600 bg-rose-50 font-bold';
@@ -958,9 +983,22 @@
                 },
 
                 // Quick Counter Helpers
+                isAllMode() {
+                    return this.selectedVelgIndex === 'all';
+                },
+
                 getItemValue(velgIdx, category, defectId) {
                     const velg = this.velgTypes[velgIdx];
                     return velg ? (velg[category][defectId] || 0) : 0;
+                },
+
+                // Displays the item value for the currently selected mode.
+                // In All Mode, shows the combined (summed) reject count across all velg types.
+                getDisplayItemValue(defectId) {
+                    if (this.isAllMode()) {
+                        return this.calculateDefectTotal(this.counterCategory, defectId);
+                    }
+                    return this.getItemValue(this.selectedVelgIndex, this.counterCategory, defectId);
                 },
 
                 adjustDefectCount(velgIdx, category, defectId, amount) {
@@ -970,6 +1008,14 @@
                         const nextVal = Math.max(0, current + amount);
                         velg[category][defectId] = nextVal;
                     }
+                },
+
+                // All Mode: synchronize a manual reject adjustment across every velg type at once.
+                adjustDefectCountAll(category, defectId, amount) {
+                    this.velgTypes.forEach(velg => {
+                        const current = velg[category][defectId] || 0;
+                        velg[category][defectId] = Math.max(0, current + amount);
+                    });
                 },
 
                 getFilteredCounterDefects() {
@@ -987,6 +1033,7 @@
 
                 updateAnalytics() {
                     const allDefects = [];
+                    const grandTotalReject = this.calculateGrandTotalReject();
 
                     // Collect Casting Defect Totals
                     this.castingDefects.forEach(d => {
@@ -1010,6 +1057,8 @@
                     const topDefects = allDefects.slice(0, 8);
                     const labels = topDefects.map(d => d.name);
                     const counts = topDefects.map(d => d.count);
+                    // Ratio of each item's reject count against the grand total reject (Casting + Machining)
+                    const ratios = topDefects.map(d => grandTotalReject > 0 ? ((d.count / grandTotalReject) * 100).toFixed(1) : '0.0');
 
                     // 1. Render Pareto Chart
                     const ctx1 = document.getElementById('paretoChart');
@@ -1030,19 +1079,36 @@
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
+                                layout: {
+                                    padding: { top: 24 }
+                                },
                                 plugins: {
-                                    legend: { display: false }
+                                    legend: { display: false },
+                                    datalabels: {
+                                        display: counts.length > 0,
+                                        anchor: 'end',
+                                        align: 'top',
+                                        color: '#0f172a',
+                                        font: { size: 10, weight: 'bold' },
+                                        formatter: (value, context) => {
+                                            const ratio = ratios[context.dataIndex] || '0.0';
+                                            return value + ' pcs (' + ratio + '%)';
+                                        }
+                                    }
                                 },
                                 scales: {
                                     y: { beginAtZero: true, ticks: { precision: 0 } }
                                 }
-                            }
+                            },
+                            plugins: [ChartDataLabels]
                         });
                     }
 
                     // 2. Render Category Breakdown Pie Chart
                     const totalCasting = this.calculateGrandSubtotal('casting');
                     const totalMachining = this.calculateGrandSubtotal('machining');
+                    const castingRatio = this.calculateCategoryRatio('casting');
+                    const machiningRatio = this.calculateCategoryRatio('machining');
 
                     const ctx2 = document.getElementById('categoryChart');
                     if (ctx2) {
@@ -1061,9 +1127,18 @@
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 plugins: {
-                                    legend: { position: 'bottom' }
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        color: '#fff',
+                                        font: { size: 12, weight: 'bold' },
+                                        formatter: (value, context) => {
+                                            const ratio = context.dataIndex === 0 ? castingRatio : machiningRatio;
+                                            return value + '\n(' + ratio + '%)';
+                                        }
+                                    }
                                 }
-                            }
+                            },
+                            plugins: [ChartDataLabels]
                         });
                     }
                 },
