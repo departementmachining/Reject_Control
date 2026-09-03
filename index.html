@@ -193,8 +193,9 @@
                         <i data-lucide="list-plus" class="w-4 h-4"></i>
                         Tambah Item Reject
                     </button>
-                    <button @click="loadSampleData()" class="text-xs text-slate-500 hover:text-slate-800 underline px-2">
-                        Isi Contoh Data Sample
+                    <button @click="openAddCounterModal()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="package-plus" class="w-4 h-4"></i>
+                        Add Counter Produk
                     </button>
                     <button @click="resetForm()" class="text-xs text-rose-600 hover:text-rose-800 underline px-2">
                         Reset Input
@@ -438,6 +439,34 @@
                     </div>
                 </div>
 
+                <!-- Top 3 Reject Tertinggi untuk Type Velg yang Aktif -->
+                <div class="mb-4 bg-white border border-slate-200 rounded-xl p-3">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500"></i>
+                        <h3 class="text-xs font-bold text-slate-700">Top 3 Item Reject Tertinggi — <span x-text="velgTypes[selectedVelgIndex]?.name"></span></h3>
+                        <span class="text-[10px] text-slate-400">(% dari Total Produksi type ini)</span>
+                    </div>
+
+                    <template x-if="getTop3RejectForVelg(selectedVelgIndex).length === 0">
+                        <p class="text-[11px] text-slate-400 italic">Belum ada data reject untuk type velg ini.</p>
+                    </template>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" x-show="getTop3RejectForVelg(selectedVelgIndex).length > 0">
+                        <template x-for="(top, tIdx) in getTop3RejectForVelg(selectedVelgIndex)" :key="tIdx">
+                            <div class="flex items-center gap-2 p-2 rounded-lg border border-slate-100 bg-slate-50">
+                                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                                      :class="tIdx === 0 ? 'bg-rose-500' : (tIdx === 1 ? 'bg-amber-500' : 'bg-slate-400')"
+                                      x-text="tIdx + 1"></span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-[11px] font-semibold text-slate-800 truncate" :title="top.name" x-text="top.code + ' — ' + top.name"></p>
+                                    <p class="text-[10px] text-slate-500" x-text="top.count + ' pcs (' + top.category + ')'"></p>
+                                </div>
+                                <span class="text-xs font-mono font-extrabold text-rose-600 flex-shrink-0" x-text="top.percentage + '%'"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 <!-- Process Category Selector (Casting vs Machining) -->
                 <div class="flex gap-2 mb-4">
                     <button @click="counterCategory = 'casting'" 
@@ -538,7 +567,7 @@
                             <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-600"></i>
                             Diagram Pareto Top Cacat / Defect
                         </h3>
-                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Prinsip 80/20</span>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded" title="Persentase dihitung dari Total Produksi Velg">Prinsip 80/20 · % dari Total Produksi</span>
                     </div>
                     <div class="h-72">
                         <canvas id="paretoChart"></canvas>
@@ -667,6 +696,65 @@
                     <button @click="submitNewDefect()" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition flex items-center gap-1.5">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
                         Tambahkan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: ADD COUNTER PRODUK (Type + Jumlah Produk, akumulasi ke Total Produksi) -->
+        <div x-show="showAddCounterModal" x-cloak
+             class="fixed inset-0 bg-slate-900/50 z-40 flex items-center justify-center p-4 no-print"
+             @keydown.escape.window="showAddCounterModal = false">
+            <div @click.outside="showAddCounterModal = false" class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="package-plus" class="w-4 h-4 text-emerald-600"></i>
+                        Add Counter Produk
+                    </h3>
+                    <button @click="showAddCounterModal = false" class="text-slate-400 hover:text-slate-700">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Type Velg</label>
+                        <select x-model="addCounterForm.mode" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none bg-white mb-2">
+                            <option value="existing">Pilih Type yang Sudah Ada</option>
+                            <option value="new">Buat Type Baru</option>
+                        </select>
+
+                        <template x-if="addCounterForm.mode === 'existing'">
+                            <select x-model.number="addCounterForm.velgIndex" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                                <template x-for="(v, idx) in velgTypes" :key="idx">
+                                    <option :value="idx" x-text="v.name + ' (Total saat ini: ' + (v.totalProd || 0) + ' pcs)'"></option>
+                                </template>
+                            </select>
+                        </template>
+
+                        <template x-if="addCounterForm.mode === 'new'">
+                            <input type="text" x-model="addCounterForm.newTypeName" placeholder="Contoh: TYPE D" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </template>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Jumlah Produk Ditambahkan (Pcs)</label>
+                        <input type="number" min="1" x-model.number="addCounterForm.qty" placeholder="Contoh: 42" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                        <p class="text-[10px] text-slate-400 mt-1">
+                            Jumlah ini akan <strong>dijumlahkan (akumulasi)</strong> ke Total Produksi type yang dipilih. Contoh: sudah terinput 42, ditambah 42 → total jadi 84.
+                        </p>
+                    </div>
+
+                    <p x-show="addCounterFormError" x-text="addCounterFormError" class="text-xs text-rose-600 font-medium"></p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 p-4 border-t border-slate-100">
+                    <button @click="showAddCounterModal = false" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                        Batal
+                    </button>
+                    <button @click="submitAddCounter()" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        Tambahkan ke Total Produksi
                     </button>
                 </div>
             </div>
@@ -823,6 +911,11 @@
                 showAddDefectModal: false,
                 newDefectForm: { category: 'casting', name: '', code: '', std: 0 },
                 newDefectFormError: '',
+
+                // Add Counter Produk Modal (Type + Produk, akumulasi ke Total Produksi)
+                showAddCounterModal: false,
+                addCounterForm: { mode: 'existing', velgIndex: 0, newTypeName: '', qty: null },
+                addCounterFormError: '',
 
                 metadata: {
                     date: new Date().toISOString().split('T')[0],
@@ -1004,6 +1097,57 @@
                     this.$nextTick(() => lucide.createIcons());
                 },
 
+                openAddCounterModal() {
+                    this.addCounterForm = {
+                        mode: 'existing',
+                        velgIndex: this.velgTypes.length > 0 ? 0 : 0,
+                        newTypeName: '',
+                        qty: null
+                    };
+                    this.addCounterFormError = '';
+                    this.showAddCounterModal = true;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                // Add Counter Produk: format Type + Produk. Jumlah produk yang diinput akan
+                // diakumulasikan (dijumlahkan) ke Total Produksi type velg yang dipilih.
+                // Contoh: sudah terinput 42, di-add 42 lagi -> totalProd otomatis jadi 84.
+                submitAddCounter() {
+                    const qty = Number(this.addCounterForm.qty);
+
+                    if (!qty || qty <= 0) {
+                        this.addCounterFormError = 'Jumlah produk wajib diisi dan lebih dari 0.';
+                        return;
+                    }
+
+                    if (this.addCounterForm.mode === 'new') {
+                        const name = this.addCounterForm.newTypeName.trim();
+                        if (!name) {
+                            this.addCounterFormError = 'Nama Type Velg baru wajib diisi.';
+                            return;
+                        }
+                        const newVelg = this.createEmptyVelg(name);
+                        newVelg.totalProd = qty;
+                        this.velgTypes.push(newVelg);
+                        this.selectedVelgIndex = this.velgTypes.length - 1;
+                    } else {
+                        const velg = this.velgTypes[this.addCounterForm.velgIndex];
+                        if (!velg) {
+                            this.addCounterFormError = 'Type Velg tidak ditemukan.';
+                            return;
+                        }
+                        // Akumulasi: totalProd lama + qty baru
+                        velg.totalProd = (Number(velg.totalProd) || 0) + qty;
+                        this.selectedVelgIndex = this.addCounterForm.velgIndex;
+                    }
+
+                    this.showAddCounterModal = false;
+                    if (this.activeTab === 'analytics') {
+                        this.updateAnalytics();
+                    }
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
                 loadSampleData() {
                     this.velgTypes = [
                         this.createEmptyVelg('DW 15"'),
@@ -1082,12 +1226,43 @@
                     return this.velgTypes.reduce((sum, _, idx) => sum + this.calculateSubtotal(idx, category), 0);
                 },
 
-                // Ratio of a category (casting/machining) against total reject (Casting + Machining)
+                // Ratio of a category (casting/machining) against Total Produksi Velg
                 calculateCategoryRatio(category) {
-                    const totalReject = this.calculateGrandTotalReject();
-                    if (!totalReject || totalReject <= 0) return '0.0';
+                    const totalProd = this.calculateGrandTotalProd();
+                    if (!totalProd || totalProd <= 0) return '0.0';
                     const categoryTotal = this.calculateGrandSubtotal(category);
-                    return ((categoryTotal / totalReject) * 100).toFixed(1);
+                    return ((categoryTotal / totalProd) * 100).toFixed(1);
+                },
+
+                // Returns the top 3 highest reject items for a given velg type, each with
+                // its percentage against that velg type's Total Produksi.
+                getTop3RejectForVelg(velgIdx) {
+                    const velg = this.velgTypes[velgIdx];
+                    if (!velg) return [];
+
+                    const totalProd = Number(velg.totalProd) || 0;
+                    const combined = [];
+
+                    this.castingDefects.forEach(d => {
+                        const count = Number(velg.casting[d.id]) || 0;
+                        if (count > 0) {
+                            combined.push({ name: d.name, code: d.code, count: count, category: 'Casting' });
+                        }
+                    });
+
+                    this.machiningDefects.forEach(d => {
+                        const count = Number(velg.machining[d.id]) || 0;
+                        if (count > 0) {
+                            combined.push({ name: d.name, code: d.code, count: count, category: 'Machining' });
+                        }
+                    });
+
+                    combined.sort((a, b) => b.count - a.count);
+
+                    return combined.slice(0, 3).map(item => ({
+                        ...item,
+                        percentage: totalProd > 0 ? ((item.count / totalProd) * 100).toFixed(2) : '0.00'
+                    }));
                 },
 
                 getRatioColorClass(ratio) {
@@ -1132,7 +1307,7 @@
 
                 updateAnalytics() {
                     const allDefects = [];
-                    const grandTotalReject = this.calculateGrandTotalReject();
+                    const grandTotalProd = this.calculateGrandTotalProd();
 
                     // Collect Casting Defect Totals
                     this.castingDefects.forEach(d => {
@@ -1156,8 +1331,8 @@
                     const topDefects = allDefects.slice(0, 8);
                     const labels = topDefects.map(d => d.name);
                     const counts = topDefects.map(d => d.count);
-                    // Ratio of each item's reject count against the grand total reject (Casting + Machining)
-                    const ratios = topDefects.map(d => grandTotalReject > 0 ? ((d.count / grandTotalReject) * 100).toFixed(1) : '0.0');
+                    // Ratio of each item's reject count against Total Produksi Velg
+                    const ratios = topDefects.map(d => grandTotalProd > 0 ? ((d.count / grandTotalProd) * 100).toFixed(1) : '0.0');
 
                     // 1. Render Pareto Chart
                     const ctx1 = document.getElementById('paretoChart');
