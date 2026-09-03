@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Checksheet QC Reject Velg - Casting & Machining</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Inter & Lucide Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Alpine.js for lightweight reactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Chart.js for Quality Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom scrollbar for matrix table */
+        .table-scroll::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .table-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Printable area styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-section, #printable-section * {
+                visibility: visible;
+            }
+            #printable-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                font-size: 10px;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #000 !important;
+                padding: 2px 4px !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col" x-data="qcApp()" x-init="initApp()">
+
+    <!-- Top Header -->
+    <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-brand-600 p-2 rounded-lg text-white shadow">
+                        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                            E-Checksheet Reject Velg
+                            <span class="text-xs font-normal px-2 py-0.5 rounded bg-brand-500/30 text-brand-200 border border-brand-400/30">Casting & Machining</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Sistem Digitalisasi Control Quality Reject & Laporan Produksi</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 self-start md:self-auto">
+                    <button @click="activeTab = 'matrix'" 
+                            :class="activeTab === 'matrix' ? 'bg-brand-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                        <i data-lucide="grid" class="w-3.5 h-3.5"></i>
+                        Matriks Checksheet
+                    </button>
+                    <button @click="activeTab = 'counter'" 
+                            :class="activeTab === 'counter' ? 'bg-brand-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                        <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i>
+                        Mode Counter Lapangan
+                    </button>
+                    <button @click="activeTab = 'analytics'" 
+                            :class="activeTab === 'analytics' ? 'bg-brand-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+                        Analisis Pareto
+                    </button>
+                    <button @click="activeTab = 'history'" 
+                            :class="activeTab === 'history' ? 'bg-brand-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                        <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                        Riwayat (<span x-text="savedSheets.length"></span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+
+        <!-- Sheet Metadata Bar (Shift, Date, Operator) -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 no-print">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Pemeriksaan</label>
+                    <input type="date" x-model="metadata.date" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Shift</label>
+                    <select x-model="metadata.shift" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-white">
+                        <option value="1">Shift 1 (Pagi)</option>
+                        <option value="2">Shift 2 (Siang)</option>
+                        <option value="3">Shift 3 (Malam)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Line / Mesin</label>
+                    <input type="text" x-model="metadata.line" placeholder="Contoh: Line Casting 02" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Inspektor / Operator</label>
+                    <input type="text" x-model="metadata.inspector" placeholder="Nama Inspektor" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="saveCurrentSheet()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3 py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Simpan
+                    </button>
+                    <button @click="exportToExcel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 p-2 rounded-lg transition" title="Export Excel">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                    </button>
+                    <button @click="printSheet()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 p-2 rounded-lg transition" title="Cetak Format Fisik">
+                        <i data-lucide="printer" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: MATRIX CHECKSHEET VIEW -->
+        <div x-show="activeTab === 'matrix'" class="space-y-4">
+            
+            <!-- Matrix Header Controls -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 no-print">
+                <div class="flex items-center gap-2">
+                    <button @click="addVelgType()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        Tambah Model/Type Velg
+                    </button>
+                    <button @click="loadSampleData()" class="text-xs text-slate-500 hover:text-slate-800 underline px-2">
+                        Isi Contoh Data Sample
+                    </button>
+                    <button @click="resetForm()" class="text-xs text-rose-600 hover:text-rose-800 underline px-2">
+                        Reset Input
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-4 text-xs font-medium text-slate-600">
+                    <span class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Ratio Normal (< 2%)
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Waspada (2% - 5%)
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Tinggi (> 5%)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="table-scroll overflow-x-auto max-h-[70vh]">
+                    <table class="w-full text-xs text-left border-collapse min-w-[900px]">
+                        <thead class="bg-slate-100 text-slate-700 sticky top-0 z-20 shadow-sm">
+                            <tr>
+                                <th class="p-2.5 border-b border-r border-slate-200 bg-slate-100 min-w-[200px] sticky left-0 z-30 font-bold">
+                                    NAMA DEFECT / CACAT
+                                </th>
+                                <th class="p-2 border-b border-r border-slate-200 w-16 text-center font-bold bg-slate-100">CODE</th>
+                                <th class="p-2 border-b border-r border-slate-200 w-16 text-center font-bold bg-slate-100">STD</th>
+
+                                <!-- Dynamic Columns for each Velg Type -->
+                                <template x-for="(velg, index) in velgTypes" :key="index">
+                                    <th class="p-2 border-b border-r border-slate-200 min-w-[110px] text-center bg-slate-50 relative group">
+                                        <div class="flex items-center justify-between px-1 mb-1">
+                                            <span class="text-[10px] font-semibold uppercase text-slate-400" x-text="'TYPE #' + (index+1)"></span>
+                                            <button @click="removeVelgType(index)" x-show="velgTypes.length > 1" class="text-slate-400 hover:text-rose-600 no-print" title="Hapus Kolom ini">
+                                                <i data-lucide="x" class="w-3 h-3"></i>
+                                            </button>
+                                        </div>
+                                        <input type="text" x-model="velg.name" class="w-full text-center font-bold text-slate-800 bg-white border border-slate-300 rounded px-1.5 py-0.5 focus:ring-1 focus:ring-brand-500 text-xs">
+                                    </th>
+                                </template>
+
+                                <th class="p-2 border-b border-slate-200 min-w-[100px] text-center font-bold bg-slate-200 text-slate-800">
+                                    TOTAL REJECT
+                                </th>
+                            </tr>
+
+                            <!-- Row: Jumlah Total Produk (Pcs) -->
+                            <tr class="bg-slate-50 font-semibold border-b border-slate-200">
+                                <td class="p-2 border-r border-slate-200 sticky left-0 bg-slate-50 z-10 text-slate-800">
+                                    Jumlah Total Produk ( Pcs )
+                                </td>
+                                <td class="border-r border-slate-200 text-center text-slate-400">-</td>
+                                <td class="border-r border-slate-200 text-center text-slate-400">-</td>
+                                <template x-for="(velg, vIdx) in velgTypes" :key="vIdx">
+                                    <td class="p-1.5 border-r border-slate-200 text-center">
+                                        <input type="number" min="0" x-model.number="velg.totalProd" class="w-full text-center font-bold text-brand-700 bg-white border border-slate-300 rounded py-1 text-xs focus:ring-1 focus:ring-brand-500">
+                                    </td>
+                                </template>
+                                <td class="p-2 text-center font-bold text-brand-900 bg-slate-200 font-mono text-sm" x-text="calculateGrandTotalProd()"></td>
+                            </tr>
+
+                            <!-- Row: Jumlah Reject (Pcs) -->
+                            <tr class="bg-amber-50/50 font-semibold border-b border-slate-200">
+                                <td class="p-2 border-r border-slate-200 sticky left-0 bg-amber-50/90 z-10 text-slate-800">
+                                    Jumlah Reject ( Pcs )
+                                </td>
+                                <td class="border-r border-slate-200 text-center text-slate-400">-</td>
+                                <td class="border-r border-slate-200 text-center text-slate-400">-</td>
+                                <template x-for="(velg, vIdx) in velgTypes" :key="vIdx">
+                                    <td class="p-2 border-r border-slate-200 text-center font-bold font-mono text-rose-700" x-text="calculateVelgTotalReject(vIdx)"></td>
+                                </template>
+                                <td class="p-2 text-center font-bold text-rose-800 bg-amber-100 font-mono text-sm" x-text="calculateGrandTotalReject()"></td>
+                            </tr>
+
+                            <!-- Row: Ratio Reject (%) -->
+                            <tr class="bg-amber-100/70 font-semibold border-b-2 border-slate-300">
+                                <td class="p-2 border-r border-slate-200 sticky left-0 bg-amber-100 z-10 text-slate-900 flex items-center justify-between">
+                                    <span>Ratio Reject ( % )</span>
+                                    <span class="text-[10px] bg-amber-200 px-1.5 py-0.5 rounded text-amber-900 font-mono">F2</span>
+                                </td>
+                                <td class="border-r border-slate-200 text-center text-slate-400">-</td>
+                                <td class="border-r border-slate-200 text-center text-slate-400">-</td>
+                                <template x-for="(velg, vIdx) in velgTypes" :key="vIdx">
+                                    <td class="p-2 border-r border-slate-200 text-center font-bold font-mono" 
+                                        :class="getRatioColorClass(calculateVelgRatio(vIdx))"
+                                        x-text="calculateVelgRatio(vIdx) + '%'"></td>
+                                </template>
+                                <td class="p-2 text-center font-bold bg-amber-200 font-mono text-sm" 
+                                    :class="getRatioColorClass(calculateGrandRatio())"
+                                    x-text="calculateGrandRatio() + '%'"></td>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <!-- CATEGORY: CASTING -->
+                            <tr class="bg-slate-800 text-white font-bold">
+                                <td colspan="100" class="p-2 tracking-wider text-[11px] uppercase bg-slate-800">
+                                    C A S T I N G
+                                </td>
+                            </tr>
+
+                            <template x-for="(item, dIdx) in castingDefects" :key="'c-'+dIdx">
+                                <tr class="hover:bg-slate-50 border-b border-slate-200 transition">
+                                    <td class="p-2 border-r border-slate-200 font-medium text-slate-800 sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center justify-between">
+                                        <span x-text="item.name"></span>
+                                    </td>
+                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-600 bg-slate-50" x-text="item.code"></td>
+                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-500 bg-slate-50" x-text="item.std"></td>
+                                    
+                                    <!-- Inputs per Velg -->
+                                    <template x-for="(velg, vIdx) in velgTypes" :key="'c-val-'+vIdx">
+                                        <td class="p-1 border-r border-slate-200 text-center">
+                                            <input type="number" min="0" 
+                                                   x-model.number="velg.casting[item.id]" 
+                                                   @input="onDefectInput()"
+                                                   class="w-full text-center font-mono rounded border border-slate-200 py-1 text-xs focus:ring-1 focus:ring-brand-500"
+                                                   :class="velg.casting[item.id] > 0 ? 'bg-amber-50 font-bold text-amber-900 border-amber-300' : 'text-slate-400 bg-white'">
+                                        </td>
+                                    </template>
+
+                                    <!-- Total defect row sum -->
+                                    <td class="p-2 text-center font-mono font-bold text-slate-800 bg-slate-100" x-text="calculateDefectTotal('casting', item.id)"></td>
+                                </tr>
+                            </template>
+
+                            <!-- Subtotal Casting -->
+                            <tr class="bg-slate-200/80 font-bold border-b-2 border-slate-400">
+                                <td class="p-2.5 border-r border-slate-300 sticky left-0 bg-slate-200 z-10 text-slate-900">
+                                    SUB TOTAL CASTING
+                                </td>
+                                <td class="border-r border-slate-300"></td>
+                                <td class="border-r border-slate-300"></td>
+                                <template x-for="(velg, vIdx) in velgTypes" :key="'sub-c-'+vIdx">
+                                    <td class="p-2 border-r border-slate-300 text-center font-mono text-slate-900 font-bold" x-text="calculateSubtotal(vIdx, 'casting')"></td>
+                                </template>
+                                <td class="p-2 text-center font-mono font-bold text-slate-950 bg-slate-300" x-text="calculateGrandSubtotal('casting')"></td>
+                            </tr>
+
+                            <!-- CATEGORY: MACHINING -->
+                            <tr class="bg-slate-800 text-white font-bold">
+                                <td colspan="100" class="p-2 tracking-wider text-[11px] uppercase bg-slate-800">
+                                    M A C H I N I N G
+                                </td>
+                            </tr>
+
+                            <template x-for="(item, dIdx) in machiningDefects" :key="'m-'+dIdx">
+                                <tr class="hover:bg-slate-50 border-b border-slate-200 transition">
+                                    <td class="p-2 border-r border-slate-200 font-medium text-slate-800 sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center justify-between">
+                                        <span x-text="item.name"></span>
+                                    </td>
+                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-600 bg-slate-50" x-text="item.code"></td>
+                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-500 bg-slate-50" x-text="item.std"></td>
+                                    
+                                    <!-- Inputs per Velg -->
+                                    <template x-for="(velg, vIdx) in velgTypes" :key="'m-val-'+vIdx">
+                                        <td class="p-1 border-r border-slate-200 text-center">
+                                            <input type="number" min="0" 
+                                                   x-model.number="velg.machining[item.id]" 
+                                                   @input="onDefectInput()"
+                                                   class="w-full text-center font-mono rounded border border-slate-200 py-1 text-xs focus:ring-1 focus:ring-brand-500"
+                                                   :class="velg.machining[item.id] > 0 ? 'bg-amber-50 font-bold text-amber-900 border-amber-300' : 'text-slate-400 bg-white'">
+                                        </td>
+                                    </template>
+
+                                    <!-- Total defect row sum -->
+                                    <td class="p-2 text-center font-mono font-bold text-slate-800 bg-slate-100" x-text="calculateDefectTotal('machining', item.id)"></td>
+                                </tr>
+                            </template>
+
+                            <!-- Subtotal Machining -->
+                            <tr class="bg-slate-200/80 font-bold border-b-2 border-slate-400">
+                                <td class="p-2.5 border-r border-slate-300 sticky left-0 bg-slate-200 z-10 text-slate-900">
+                                    SUB TOTAL MACHINING
+                                </td>
+                                <td class="border-r border-slate-300"></td>
+                                <td class="border-r border-slate-300"></td>
+                                <template x-for="(velg, vIdx) in velgTypes" :key="'sub-m-'+vIdx">
+                                    <td class="p-2 border-r border-slate-300 text-center font-mono text-slate-900 font-bold" x-text="calculateSubtotal(vIdx, 'machining')"></td>
+                                </template>
+                                <td class="p-2 text-center font-mono font-bold text-slate-950 bg-slate-300" x-text="calculateGrandSubtotal('machining')"></td>
+                            </tr>
+
+                            <!-- GRAND TOTAL REJECT C M -->
+                            <tr class="bg-rose-100 font-bold border-t-2 border-rose-300 text-rose-950 text-sm">
+                                <td class="p-3 border-r border-rose-200 sticky left-0 bg-rose-100 z-10 uppercase">
+                                    TOTAL REJECT C M (CASTING + MACHINING)
+                                </td>
+                                <td class="border-r border-rose-200"></td>
+                                <td class="border-r border-rose-200"></td>
+                                <template x-for="(velg, vIdx) in velgTypes" :key="'grand-'+vIdx">
+                                    <td class="p-2 border-r border-rose-200 text-center font-mono text-rose-900 font-extrabold text-sm" x-text="calculateVelgTotalReject(vIdx)"></td>
+                                </template>
+                                <td class="p-2 text-center font-mono font-extrabold text-rose-950 bg-rose-200 text-base" x-text="calculateGrandTotalReject()"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: QUICK SHOP FLOOR COUNTER MODE (MOBILE / TABLET FRIENDLY) -->
+        <div x-show="activeTab === 'counter'" class="space-y-6">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">Mode Counter Cepat Operator Lapangan</h2>
+                        <p class="text-xs text-slate-500">Pilih Type Velg lalu tekan tombol + / - untuk menambah hitungan cacat secara langsung saat inspeksi.</p>
+                    </div>
+
+                    <!-- Selected Velg Selector -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-semibold text-slate-600">Pilih Type Velg:</label>
+                        <select x-model.number="selectedVelgIndex" class="bg-slate-50 border border-slate-300 font-bold text-brand-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <template x-for="(v, idx) in velgTypes" :key="idx">
+                                <option :value="idx" x-text="v.name + ' (Total: ' + calculateVelgTotalReject(idx) + ' pcs)'"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Current Selected Summary Header -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>
+                        <span class="text-[10px] text-slate-500 font-medium">Model Velg Active</span>
+                        <p class="text-sm font-bold text-slate-900" x-text="velgTypes[selectedVelgIndex]?.name"></p>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 font-medium">Total Produksi</span>
+                        <p class="text-sm font-bold text-brand-700" x-text="(velgTypes[selectedVelgIndex]?.totalProd || 0) + ' pcs'"></p>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 font-medium">Total Reject Saat Ini</span>
+                        <p class="text-sm font-bold text-rose-600" x-text="calculateVelgTotalReject(selectedVelgIndex) + ' pcs'"></p>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 font-medium">Ratio Reject</span>
+                        <p class="text-sm font-bold" :class="getRatioColorClass(calculateVelgRatio(selectedVelgIndex))" x-text="calculateVelgRatio(selectedVelgIndex) + '%'"></p>
+                    </div>
+                </div>
+
+                <!-- Process Category Selector (Casting vs Machining) -->
+                <div class="flex gap-2 mb-4">
+                    <button @click="counterCategory = 'casting'" 
+                            :class="counterCategory === 'casting' ? 'bg-slate-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                            class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                        <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
+                        CASTING DEFECTS (<span x-text="calculateSubtotal(selectedVelgIndex, 'casting')"></span>)
+                    </button>
+                    <button @click="counterCategory = 'machining'" 
+                            :class="counterCategory === 'machining' ? 'bg-slate-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                            class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                        <i data-lucide="cog" class="w-4 h-4 text-sky-400"></i>
+                        MACHINING DEFECTS (<span x-text="calculateSubtotal(selectedVelgIndex, 'machining')"></span>)
+                    </button>
+                </div>
+
+                <!-- Search Filter for Defect Counter -->
+                <div class="mb-4">
+                    <input type="text" x-model="counterSearch" placeholder="Cari nama defect atau kode..." class="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <!-- Counter Buttons Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <template x-for="item in getFilteredCounterDefects()" :key="counterCategory + '-' + item.id">
+                        <div class="border rounded-xl p-3 flex flex-col justify-between transition hover:shadow-md bg-white"
+                             :class="getItemValue(selectedVelgIndex, counterCategory, item.id) > 0 ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200'">
+                            
+                            <div class="mb-2">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono" x-text="item.code"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono" x-text="'Std: ' + item.std"></span>
+                                </div>
+                                <h3 class="text-xs font-semibold text-slate-800 leading-tight" x-text="item.name"></h3>
+                            </div>
+
+                            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                                <span class="text-lg font-mono font-extrabold"
+                                      :class="getItemValue(selectedVelgIndex, counterCategory, item.id) > 0 ? 'text-amber-700' : 'text-slate-400'"
+                                      x-text="getItemValue(selectedVelgIndex, counterCategory, item.id)"></span>
+
+                                <div class="flex items-center space-x-1">
+                                    <button @click="adjustDefectCount(selectedVelgIndex, counterCategory, item.id, -1)" 
+                                            class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95">
+                                        -
+                                    </button>
+                                    <button @click="adjustDefectCount(selectedVelgIndex, counterCategory, item.id, 1)" 
+                                            class="w-10 h-8 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center justify-center shadow transition active:scale-95">
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: PARETO ANALYSIS & DASHBOARD -->
+        <div x-show="activeTab === 'analytics'" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-slate-500 font-medium">Total Produksi Velg</span>
+                        <h3 class="text-2xl font-black text-slate-800 font-mono" x-text="calculateGrandTotalProd() + ' pcs'"></h3>
+                    </div>
+                    <div class="p-3 bg-brand-50 rounded-xl text-brand-600">
+                        <i data-lucide="disc" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-slate-500 font-medium">Total Reject (Casting + Machining)</span>
+                        <h3 class="text-2xl font-black text-rose-600 font-mono" x-text="calculateGrandTotalReject() + ' pcs'"></h3>
+                    </div>
+                    <div class="p-3 bg-rose-50 rounded-xl text-rose-600">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-slate-500 font-medium">Rata-rata Ratio Reject</span>
+                        <h3 class="text-2xl font-black font-mono" :class="getRatioColorClass(calculateGrandRatio())" x-text="calculateGrandRatio() + '%'"></h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
+                        <i data-lucide="percent" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Pareto Defect Chart -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-600"></i>
+                            Diagram Pareto Top Cacat / Defect
+                        </h3>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Prinsip 80/20</span>
+                    </div>
+                    <div class="h-72">
+                        <canvas id="paretoChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Casting vs Machining Breakdown Chart -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-sky-600"></i>
+                            Distribusi Reject: Casting vs Machining
+                        </h3>
+                    </div>
+                    <div class="h-72 flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: SAVED HISTORY LOGS -->
+        <div x-show="activeTab === 'history'" class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">Riwayat Checksheet Tersimpan</h2>
+                    <p class="text-xs text-slate-500">Daftar inspeksi QC yang tersimpan di memori lokal peramban.</p>
+                </div>
+                <button @click="clearAllHistory()" x-show="savedSheets.length > 0" class="text-xs text-rose-600 hover:text-rose-800 underline">
+                    Hapus Semua Riwayat
+                </button>
+            </div>
+
+            <template x-if="savedSheets.length === 0">
+                <div class="text-center py-12 text-slate-400">
+                    <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+                    <p class="text-xs font-medium">Belum ada riwayat tersimpan. Klik tombol "Simpan" pada form utama.</p>
+                </div>
+            </template>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" x-show="savedSheets.length > 0">
+                <template x-for="(sheet, idx) in savedSheets" :key="idx">
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 hover:bg-white hover:border-brand-300 transition shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <span class="text-xs font-bold text-brand-700" x-text="'Shift ' + sheet.metadata.shift + ' - ' + sheet.metadata.line"></span>
+                            <span class="text-[10px] text-slate-500 font-mono" x-text="sheet.metadata.date"></span>
+                        </div>
+
+                        <div class="text-xs space-y-1">
+                            <p class="text-slate-600"><span class="font-semibold text-slate-700">Inspektor:</span> <span x-text="sheet.metadata.inspector || '-'"></span></p>
+                            <p class="text-slate-600"><span class="font-semibold text-slate-700">Model Velg:</span> <span x-text="sheet.velgTypes.map(v=>v.name).join(', ')"></span></p>
+                            <p class="text-slate-600"><span class="font-semibold text-slate-700">Total Produksi:</span> <span class="font-mono font-bold" x-text="sheet.summary.totalProd + ' pcs'"></span></p>
+                            <p class="text-slate-600"><span class="font-semibold text-slate-700">Total Reject:</span> <span class="font-mono font-bold text-rose-600" x-text="sheet.summary.totalReject + ' pcs (' + sheet.summary.ratio + '%)'"></span></p>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                            <button @click="loadSavedSheet(idx)" class="bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs px-2.5 py-1 rounded font-medium border border-brand-200 transition">
+                                Buka
+                            </button>
+                            <button @click="deleteSavedSheet(idx)" class="text-rose-600 hover:text-rose-800 text-xs px-2 py-1 transition">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- PRINTABLE REPORT FORM (Matches original image structure perfectly) -->
+    <div id="printable-section" class="p-4 hidden">
+        <div class="border-2 border-black p-2">
+            <!-- Header section -->
+            <div class="text-center font-bold text-sm border-b-2 border-black pb-2 mb-2">
+                LEMBAR PERIKSA CONTROL QUALITY REJECT VELG
+                <div class="text-xs font-normal flex justify-between px-4 mt-1">
+                    <span>Tanggal: <strong x-text="metadata.date"></strong></span>
+                    <span>Shift: <strong x-text="metadata.shift"></strong></span>
+                    <span>Line: <strong x-text="metadata.line"></strong></span>
+                    <span>Inspektor: <strong x-text="metadata.inspector"></strong></span>
+                </div>
+            </div>
+
+            <!-- Print Matrix Table -->
+            <table class="w-full border-collapse text-[10px] print-table">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border border-black p-1 text-left">TYPE VELG</th>
+                        <th class="border border-black p-1 text-center font-mono">CODE</th>
+                        <th class="border border-black p-1 text-center font-mono">STD</th>
+                        <template x-for="velg in velgTypes">
+                            <th class="border border-black p-1 text-center font-bold" x-text="velg.name"></th>
+                        </template>
+                        <th class="border border-black p-1 text-center font-bold">TOTAL</th>
+                    </tr>
+                    <tr>
+                        <td class="border border-black p-1 font-bold">Jumlah Total Produk ( Pcs )</td>
+                        <td class="border border-black p-1 text-center">-</td>
+                        <td class="border border-black p-1 text-center">-</td>
+                        <template x-for="velg in velgTypes">
+                            <td class="border border-black p-1 text-center font-bold font-mono" x-text="velg.totalProd"></td>
+                        </template>
+                        <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateGrandTotalProd()"></td>
+                    </tr>
+                    <tr>
+                        <td class="border border-black p-1 font-bold">Jumlah Reject ( Pcs )</td>
+                        <td class="border border-black p-1 text-center">-</td>
+                        <td class="border border-black p-1 text-center">-</td>
+                        <template x-for="(velg, vIdx) in velgTypes">
+                            <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateVelgTotalReject(vIdx)"></td>
+                        </template>
+                        <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateGrandTotalReject()"></td>
+                    </tr>
+                    <tr>
+                        <td class="border border-black p-1 font-bold">Ratio Reject ( % )</td>
+                        <td class="border border-black p-1 text-center">-</td>
+                        <td class="border border-black p-1 text-center">-</td>
+                        <template x-for="(velg, vIdx) in velgTypes">
+                            <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateVelgRatio(vIdx) + '%'"></td>
+                        </template>
+                        <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateGrandRatio() + '%'"></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- CASTING -->
+                    <tr class="font-bold bg-gray-200">
+                        <td colspan="100" class="border border-black p-1 text-left">CASTING</td>
+                    </tr>
+                    <template x-for="item in castingDefects">
+                        <tr>
+                            <td class="border border-black p-1" x-text="item.name"></td>
+                            <td class="border border-black p-1 text-center font-mono" x-text="item.code"></td>
+                            <td class="border border-black p-1 text-center font-mono" x-text="item.std"></td>
+                            <template x-for="velg in velgTypes">
+                                <td class="border border-black p-1 text-center font-mono" x-text="velg.casting[item.id] || 0"></td>
+                            </template>
+                            <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateDefectTotal('casting', item.id)"></td>
+                        </tr>
+                    </template>
+                    <tr class="font-bold bg-gray-100">
+                        <td class="border border-black p-1">SUB TOTAL CASTING</td>
+                        <td class="border border-black p-1"></td>
+                        <td class="border border-black p-1"></td>
+                        <template x-for="(velg, vIdx) in velgTypes">
+                            <td class="border border-black p-1 text-center font-mono" x-text="calculateSubtotal(vIdx, 'casting')"></td>
+                        </template>
+                        <td class="border border-black p-1 text-center font-mono" x-text="calculateGrandSubtotal('casting')"></td>
+                    </tr>
+
+                    <!-- MACHINING -->
+                    <tr class="font-bold bg-gray-200">
+                        <td colspan="100" class="border border-black p-1 text-left">MACHINING</td>
+                    </tr>
+                    <template x-for="item in machiningDefects">
+                        <tr>
+                            <td class="border border-black p-1" x-text="item.name"></td>
+                            <td class="border border-black p-1 text-center font-mono" x-text="item.code"></td>
+                            <td class="border border-black p-1 text-center font-mono" x-text="item.std"></td>
+                            <template x-for="velg in velgTypes">
+                                <td class="border border-black p-1 text-center font-mono" x-text="velg.machining[item.id] || 0"></td>
+                            </template>
+                            <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateDefectTotal('machining', item.id)"></td>
+                        </tr>
+                    </template>
+                    <tr class="font-bold bg-gray-100">
+                        <td class="border border-black p-1">SUB TOTAL MACHINING</td>
+                        <td class="border border-black p-1"></td>
+                        <td class="border border-black p-1"></td>
+                        <template x-for="(velg, vIdx) in velgTypes">
+                            <td class="border border-black p-1 text-center font-mono" x-text="calculateSubtotal(vIdx, 'machining')"></td>
+                        </template>
+                        <td class="border border-black p-1 text-center font-mono" x-text="calculateGrandSubtotal('machining')"></td>
+                    </tr>
+
+                    <tr class="font-bold bg-gray-300">
+                        <td class="border border-black p-1">TOTAL REJECT C M</td>
+                        <td class="border border-black p-1"></td>
+                        <td class="border border-black p-1"></td>
+                        <template x-for="(velg, vIdx) in velgTypes">
+                            <td class="border border-black p-1 text-center font-mono" x-text="calculateVelgTotalReject(vIdx)"></td>
+                        </template>
+                        <td class="border border-black p-1 text-center font-mono" x-text="calculateGrandTotalReject()"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Signatures section matching paper sheet bottom -->
+            <div class="grid grid-cols-3 gap-4 mt-6 text-center text-xs">
+                <div class="border border-black p-2 h-24 flex flex-col justify-between">
+                    <span>Di buat:</span>
+                    <span class="font-bold uppercase" x-text="metadata.inspector || '....................'"></span>
+                </div>
+                <div class="border border-black p-2 h-24 flex flex-col justify-between">
+                    <span>Di periksa:</span>
+                    <span>....................</span>
+                </div>
+                <div class="border border-black p-2 h-24 flex flex-col justify-between">
+                    <span>Disetujui:</span>
+                    <span>....................</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function qcApp() {
+            return {
+                activeTab: 'matrix',
+                counterCategory: 'casting',
+                counterSearch: '',
+                selectedVelgIndex: 0,
+                paretoChartInstance: null,
+                categoryChartInstance: null,
+
+                metadata: {
+                    date: new Date().toISOString().split('T')[0],
+                    shift: '1',
+                    line: 'Line Casting A',
+                    inspector: 'Budi Santoso'
+                },
+
+                // Complete Defect Dictionary transcribed directly from the image
+                castingDefects: [
+                    { id: 'dw', name: 'Dhisuku Ware', code: 'DW', std: 178 },
+                    { id: 'hs', name: 'Habu Su', code: 'HS', std: 119 },
+                    { id: 'yz', name: 'Yu Zakai', code: 'YZ', std: 124 },
+                    { id: 'kr', name: 'Kirai', code: 'KR', std: 112 },
+                    { id: 'rsb', name: 'Rimu Su Bead Inner', code: 'RSB', std: 179 },
+                    { id: 'rso', name: 'Rimu Su Bead Outer', code: 'RSO', std: 118 },
+                    { id: 'rsd', name: 'Rimu Su Dalam', code: 'RSD', std: 180 },
+                    { id: 'rsh', name: 'Rimu Su Hump', code: 'RSH', std: 182 },
+                    { id: 'rs', name: 'Rimu Su Luar', code: 'RS', std: 181 },
+                    { id: 'is', name: 'Ishoumen Su', code: 'IS', std: 113 },
+                    { id: 'bas', name: 'Boruto Ana Su', code: 'BAS', std: 120 },
+                    { id: 'us', name: 'Ura Su', code: 'US', std: 122 },
+                    { id: 'knn', name: 'Kanaami Nokori', code: 'KNN', std: 128 },
+                    { id: 'hkb', name: 'Hike Su', code: 'HKB', std: 123 },
+                    { id: 'fs', name: 'Flange Su Inner', code: 'FS', std: 116 },
+                    { id: 'fo', name: 'Flange Su Outer', code: 'FO', std: 117 },
+                    { id: 'ih', name: 'I Hada Heko', code: 'IH', std: 124 },
+                    { id: 'it', name: 'I Hada Totsu', code: 'IT', std: 125 },
+                    { id: 'bz_c', name: 'Boruto Ana Zure', code: 'BZ', std: 126 },
+                    { id: 'hsk', name: 'Hub Su Cap', code: 'HSK', std: 127 },
+                    { id: 'ik', name: 'Ibutsu Kamikomi', code: 'IK', std: 128 },
+                    { id: 'ksn', name: 'Katsu Niku', code: 'KSN', std: 135 },
+                    { id: 'vs', name: 'Valve Su', code: 'VS', std: 129 },
+                    { id: 'em', name: 'Eaa More', code: 'EM', std: 114 },
+                    { id: 'gb', name: 'Gyaku Bari', code: 'GB', std: 130 },
+                    { id: 'kkn_c', name: 'Kurokawa Hub / Flange (LP)', code: 'KKN', std: 183 },
+                    { id: 'hkf', name: 'Hakidashi Furyou', code: 'HKF', std: 134 },
+                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150 }
+                ],
+
+                machiningDefects: [
+                    { id: 'ssf', name: 'Sessaku Furyou', code: 'SSF', std: 141 },
+                    { id: 'bb', name: 'Bibiri Bolt hole', code: 'BB', std: 142 },
+                    { id: 'bv', name: 'Bibiri Valve hole', code: 'BV', std: 165 },
+                    { id: 'sf', name: 'Sunpou Furyou', code: 'SF', std: 143 },
+                    { id: 'dk', name: 'Dakon', code: 'DK', std: 144 },
+                    { id: 'vz', name: 'Valve Zure', code: 'VZ', std: 145 },
+                    { id: 'fz', name: 'Flange Zure', code: 'FZ', std: 146 },
+                    { id: 'bz_m', name: 'Mentori Lub. Baut Depan Zure', code: 'BZ', std: 147 },
+                    { id: 'ktf', name: 'Kako Tenaoshi Furyou', code: 'KTF', std: 148 },
+                    { id: 'kkn_m', name: 'Kurokawa Nokori', code: 'KKN', std: 149 },
+                    { id: 'hf', name: 'Henido Furyou', code: 'HF', std: 150 },
+                    { id: 'bl', name: 'Balance', code: 'BL', std: 157 },
+                    { id: 'ss', name: 'Sessaku Suji', code: 'SS', std: 151 },
+                    { id: 'hk', name: 'Hataki Kizu', code: 'HK', std: 153 },
+                    { id: 'cg', name: 'Chip Gompal', code: 'CG', std: 156 },
+                    { id: 'bi', name: 'Bibiri Rim , Ishoumen', code: 'BI', std: 166 }
+                ],
+
+                velgTypes: [],
+                savedSheets: [],
+
+                initApp() {
+                    // Initialize with 3 Velg Types default
+                    this.velgTypes = [
+                        this.createEmptyVelg('TYPE A'),
+                        this.createEmptyVelg('TYPE B'),
+                        this.createEmptyVelg('TYPE C')
+                    ];
+
+                    // Load saved history from localStorage
+                    const saved = localStorage.getItem('qc_velg_sheets');
+                    if (saved) {
+                        try {
+                            this.savedSheets = JSON.parse(saved);
+                        } catch(e) {
+                            console.error(e);
+                        }
+                    }
+
+                    // Pre-fill with example data for rich preview
+                    this.loadSampleData();
+
+                    // Re-render charts on tab switch
+                    this.$watch('activeTab', (newTab) => {
+                        if (newTab === 'analytics') {
+                            this.$nextTick(() => this.updateAnalytics());
+                        }
+                    });
+
+                    // Refresh Lucide icons
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                createEmptyVelg(name = 'TYPE VELG') {
+                    const castingObj = {};
+                    this.castingDefects.forEach(d => castingObj[d.id] = 0);
+
+                    const machiningObj = {};
+                    this.machiningDefects.forEach(d => machiningObj[d.id] = 0);
+
+                    return {
+                        name: name,
+                        totalProd: 500,
+                        casting: castingObj,
+                        machining: machiningObj
+                    };
+                },
+
+                addVelgType() {
+                    const charCode = 65 + this.velgTypes.length;
+                    const nextName = 'TYPE ' + String.fromCharCode(charCode);
+                    this.velgTypes.push(this.createEmptyVelg(nextName));
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                removeVelgType(index) {
+                    if (this.velgTypes.length > 1) {
+                        this.velgTypes.splice(index, 1);
+                        if (this.selectedVelgIndex >= this.velgTypes.length) {
+                            this.selectedVelgIndex = this.velgTypes.length - 1;
+                        }
+                    }
+                },
+
+                loadSampleData() {
+                    this.velgTypes = [
+                        this.createEmptyVelg('DW 15"'),
+                        this.createEmptyVelg('HS 17"'),
+                        this.createEmptyVelg('YZ 18"')
+                    ];
+
+                    this.velgTypes[0].totalProd = 450;
+                    this.velgTypes[0].casting['dw'] = 4;
+                    this.velgTypes[0].casting['rsb'] = 3;
+                    this.velgTypes[0].casting['hkb'] = 2;
+                    this.velgTypes[0].machining['ssf'] = 5;
+                    this.velgTypes[0].machining['dk'] = 2;
+
+                    this.velgTypes[1].totalProd = 600;
+                    this.velgTypes[1].casting['hs'] = 6;
+                    this.velgTypes[1].casting['is'] = 2;
+                    this.velgTypes[1].casting['rso'] = 1;
+                    this.velgTypes[1].machining['bb'] = 4;
+                    this.velgTypes[1].machining['bl'] = 3;
+
+                    this.velgTypes[2].totalProd = 350;
+                    this.velgTypes[2].casting['yz'] = 3;
+                    this.velgTypes[2].casting['rsd'] = 5;
+                    this.velgTypes[2].machining['sf'] = 2;
+                    this.velgTypes[2].machining['cg'] = 1;
+                },
+
+                resetForm() {
+                    this.velgTypes.forEach(v => {
+                        v.totalProd = 0;
+                        Object.keys(v.casting).forEach(k => v.casting[k] = 0);
+                        Object.keys(v.machining).forEach(k => v.machining[k] = 0);
+                    });
+                },
+
+                // Calculations
+                calculateSubtotal(velgIdx, category) {
+                    const velg = this.velgTypes[velgIdx];
+                    if (!velg) return 0;
+                    const items = velg[category];
+                    return Object.values(items).reduce((sum, val) => sum + (Number(val) || 0), 0);
+                },
+
+                calculateVelgTotalReject(velgIdx) {
+                    return this.calculateSubtotal(velgIdx, 'casting') + this.calculateSubtotal(velgIdx, 'machining');
+                },
+
+                calculateVelgRatio(velgIdx) {
+                    const velg = this.velgTypes[velgIdx];
+                    if (!velg || !velg.totalProd || velg.totalProd <= 0) return '0.00';
+                    const totalReject = this.calculateVelgTotalReject(velgIdx);
+                    return ((totalReject / velg.totalProd) * 100).toFixed(2);
+                },
+
+                calculateGrandTotalProd() {
+                    return this.velgTypes.reduce((sum, v) => sum + (Number(v.totalProd) || 0), 0);
+                },
+
+                calculateGrandTotalReject() {
+                    return this.velgTypes.reduce((sum, _, idx) => sum + this.calculateVelgTotalReject(idx), 0);
+                },
+
+                calculateGrandRatio() {
+                    const totalProd = this.calculateGrandTotalProd();
+                    if (!totalProd || totalProd <= 0) return '0.00';
+                    const totalReject = this.calculateGrandTotalReject();
+                    return ((totalReject / totalProd) * 100).toFixed(2);
+                },
+
+                calculateDefectTotal(category, defectId) {
+                    return this.velgTypes.reduce((sum, v) => sum + (Number(v[category][defectId]) || 0), 0);
+                },
+
+                calculateGrandSubtotal(category) {
+                    return this.velgTypes.reduce((sum, _, idx) => sum + this.calculateSubtotal(idx, category), 0);
+                },
+
+                getRatioColorClass(ratio) {
+                    const r = parseFloat(ratio);
+                    if (r > 5.0) return 'text-rose-600 bg-rose-50 font-bold';
+                    if (r >= 2.0) return 'text-amber-600 bg-amber-50 font-bold';
+                    return 'text-emerald-600 font-bold';
+                },
+
+                // Quick Counter Helpers
+                getItemValue(velgIdx, category, defectId) {
+                    const velg = this.velgTypes[velgIdx];
+                    return velg ? (velg[category][defectId] || 0) : 0;
+                },
+
+                adjustDefectCount(velgIdx, category, defectId, amount) {
+                    const velg = this.velgTypes[velgIdx];
+                    if (velg) {
+                        const current = velg[category][defectId] || 0;
+                        const nextVal = Math.max(0, current + amount);
+                        velg[category][defectId] = nextVal;
+                    }
+                },
+
+                getFilteredCounterDefects() {
+                    const list = this.counterCategory === 'casting' ? this.castingDefects : this.machiningDefects;
+                    if (!this.counterSearch.trim()) return list;
+                    const query = this.counterSearch.toLowerCase();
+                    return list.filter(item => item.name.toLowerCase().includes(query) || item.code.toLowerCase().includes(query));
+                },
+
+                onDefectInput() {
+                    if (this.activeTab === 'analytics') {
+                        this.updateAnalytics();
+                    }
+                },
+
+                updateAnalytics() {
+                    const allDefects = [];
+
+                    // Collect Casting Defect Totals
+                    this.castingDefects.forEach(d => {
+                        const total = this.calculateDefectTotal('casting', d.id);
+                        if (total > 0) {
+                            allDefects.push({ name: d.name + ' (C)', count: total, category: 'Casting' });
+                        }
+                    });
+
+                    // Collect Machining Defect Totals
+                    this.machiningDefects.forEach(d => {
+                        const total = this.calculateDefectTotal('machining', d.id);
+                        if (total > 0) {
+                            allDefects.push({ name: d.name + ' (M)', count: total, category: 'Machining' });
+                        }
+                    });
+
+                    // Sort descending for Pareto
+                    allDefects.sort((a, b) => b.count - a.count);
+
+                    const topDefects = allDefects.slice(0, 8);
+                    const labels = topDefects.map(d => d.name);
+                    const counts = topDefects.map(d => d.count);
+
+                    // 1. Render Pareto Chart
+                    const ctx1 = document.getElementById('paretoChart');
+                    if (ctx1) {
+                        if (this.paretoChartInstance) this.paretoChartInstance.destroy();
+
+                        this.paretoChartInstance = new Chart(ctx1, {
+                            type: 'bar',
+                            data: {
+                                labels: labels.length ? labels : ['Belum ada data'],
+                                datasets: [{
+                                    label: 'Jumlah Reject (Pcs)',
+                                    data: counts.length ? counts : [0],
+                                    backgroundColor: '#0284c7',
+                                    borderRadius: 6
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false }
+                                },
+                                scales: {
+                                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                                }
+                            }
+                        });
+                    }
+
+                    // 2. Render Category Breakdown Pie Chart
+                    const totalCasting = this.calculateGrandSubtotal('casting');
+                    const totalMachining = this.calculateGrandSubtotal('machining');
+
+                    const ctx2 = document.getElementById('categoryChart');
+                    if (ctx2) {
+                        if (this.categoryChartInstance) this.categoryChartInstance.destroy();
+
+                        this.categoryChartInstance = new Chart(ctx2, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Subtotal Casting', 'Subtotal Machining'],
+                                datasets: [{
+                                    data: [totalCasting, totalMachining],
+                                    backgroundColor: ['#f59e0b', '#0284c7']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' }
+                                }
+                            }
+                        });
+                    }
+                },
+
+                saveCurrentSheet() {
+                    const sheetRecord = {
+                        timestamp: new Date().toLocaleString('id-ID'),
+                        metadata: { ...this.metadata },
+                        velgTypes: JSON.parse(JSON.stringify(this.velgTypes)),
+                        summary: {
+                            totalProd: this.calculateGrandTotalProd(),
+                            totalReject: this.calculateGrandTotalReject(),
+                            ratio: this.calculateGrandRatio()
+                        }
+                    };
+
+                    this.savedSheets.unshift(sheetRecord);
+                    localStorage.setItem('qc_velg_sheets', JSON.stringify(this.savedSheets));
+                    
+                    // User feedback notification banner
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-4 right-4 bg-emerald-700 text-white px-4 py-3 rounded-xl shadow-lg z-50 text-xs font-semibold flex items-center gap-2';
+                    toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Checksheet berhasil disimpan ke Riwayat!`;
+                    document.body.appendChild(toast);
+                    lucide.createIcons();
+                    setTimeout(() => toast.remove(), 3000);
+                },
+
+                loadSavedSheet(index) {
+                    const sheet = this.savedSheets[index];
+                    if (sheet) {
+                        this.metadata = { ...sheet.metadata };
+                        this.velgTypes = JSON.parse(JSON.stringify(sheet.velgTypes));
+                        this.activeTab = 'matrix';
+                    }
+                },
+
+                deleteSavedSheet(index) {
+                    this.savedSheets.splice(index, 1);
+                    localStorage.setItem('qc_velg_sheets', JSON.stringify(this.savedSheets));
+                },
+
+                clearAllHistory() {
+                    this.savedSheets = [];
+                    localStorage.removeItem('qc_velg_sheets');
+                },
+
+                exportToExcel() {
+                    const wb = XLSX.utils.book_new();
+                    const sheetData = [];
+
+                    // Header Rows
+                    sheetData.push(["CONTROL QUALITY REJECT VELG SHEET"]);
+                    sheetData.push(["Tanggal:", this.metadata.date, "Shift:", this.metadata.shift, "Line:", this.metadata.line, "Inspektor:", this.metadata.inspector]);
+                    sheetData.push([]);
+
+                    // Table Headers
+                    const headerRow = ["NAMA DEFECT / CACAT", "CODE", "STD"];
+                    this.velgTypes.forEach(v => headerRow.push(v.name));
+                    headerRow.push("TOTAL REJECT");
+                    sheetData.push(headerRow);
+
+                    // Row: Total Prod
+                    const prodRow = ["Jumlah Total Produk (Pcs)", "-", "-"];
+                    this.velgTypes.forEach(v => prodRow.push(v.totalProd));
+                    prodRow.push(this.calculateGrandTotalProd());
+                    sheetData.push(prodRow);
+
+                    // Row: Total Reject
+                    const rejectRow = ["Jumlah Reject (Pcs)", "-", "-"];
+                    this.velgTypes.forEach((_, idx) => rejectRow.push(this.calculateVelgTotalReject(idx)));
+                    rejectRow.push(this.calculateGrandTotalReject());
+                    sheetData.push(rejectRow);
+
+                    // Row: Ratio
+                    const ratioRow = ["Ratio Reject (%)", "-", "-"];
+                    this.velgTypes.forEach((_, idx) => ratioRow.push(this.calculateVelgRatio(idx) + "%"));
+                    ratioRow.push(this.calculateGrandRatio() + "%");
+                    sheetData.push(ratioRow);
+
+                    // Casting Defects
+                    sheetData.push(["--- CASTING DEFECTS ---"]);
+                    this.castingDefects.forEach(d => {
+                        const row = [d.name, d.code, d.std];
+                        this.velgTypes.forEach(v => row.push(v.casting[d.id] || 0));
+                        row.push(this.calculateDefectTotal('casting', d.id));
+                        sheetData.push(row);
+                    });
+
+                    // Subtotal Casting
+                    const subCastingRow = ["SUB TOTAL CASTING", "", ""];
+                    this.velgTypes.forEach((_, idx) => subCastingRow.push(this.calculateSubtotal(idx, 'casting')));
+                    subCastingRow.push(this.calculateGrandSubtotal('casting'));
+                    sheetData.push(subCastingRow);
+
+                    // Machining Defects
+                    sheetData.push(["--- MACHINING DEFECTS ---"]);
+                    this.machiningDefects.forEach(d => {
+                        const row = [d.name, d.code, d.std];
+                        this.velgTypes.forEach(v => row.push(v.machining[d.id] || 0));
+                        row.push(this.calculateDefectTotal('machining', d.id));
+                        sheetData.push(row);
+                    });
+
+                    // Subtotal Machining
+                    const subMachiningRow = ["SUB TOTAL MACHINING", "", ""];
+                    this.velgTypes.forEach((_, idx) => subMachiningRow.push(this.calculateSubtotal(idx, 'machining')));
+                    subMachiningRow.push(this.calculateGrandSubtotal('machining'));
+                    sheetData.push(subMachiningRow);
+
+                    // Grand Total
+                    const grandRow = ["TOTAL REJECT C M", "", ""];
+                    this.velgTypes.forEach((_, idx) => grandRow.push(this.calculateVelgTotalReject(idx)));
+                    grandRow.push(this.calculateGrandTotalReject());
+                    sheetData.push(grandRow);
+
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                    XLSX.utils.book_append_sheet(wb, ws, "QC_Reject_Velg");
+                    XLSX.writeFile(wb, `QC_Velg_Reject_${this.metadata.date}_Shift${this.metadata.shift}.xlsx`);
+                },
+
+                printSheet() {
+                    window.print();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
