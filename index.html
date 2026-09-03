@@ -41,6 +41,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
+        [x-cloak] { display: none !important; }
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
@@ -187,6 +188,10 @@
                     <button @click="addVelgType()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                         Tambah Model/Type Velg
+                    </button>
+                    <button @click="openAddDefectModal('casting')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="list-plus" class="w-4 h-4"></i>
+                        Tambah Item Reject
                     </button>
                     <button @click="loadSampleData()" class="text-xs text-slate-500 hover:text-slate-800 underline px-2">
                         Isi Contoh Data Sample
@@ -406,7 +411,6 @@
                     <div class="flex items-center gap-2">
                         <label class="text-xs font-semibold text-slate-600">Pilih Type Velg:</label>
                         <select x-model="selectedVelgIndex" class="bg-slate-50 border border-slate-300 font-bold text-brand-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="all">🔄 SEMUA TYPE (All Mode - Input Sinkron)</option>
                             <template x-for="(v, idx) in velgTypes" :key="idx">
                                 <option :value="idx" x-text="v.name + ' (Total: ' + calculateVelgTotalReject(idx) + ' pcs)'"></option>
                             </template>
@@ -418,26 +422,20 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Model Velg Active</span>
-                        <p class="text-sm font-bold text-slate-900" x-text="isAllMode() ? 'SEMUA TYPE (All Mode)' : velgTypes[selectedVelgIndex]?.name"></p>
+                        <p class="text-sm font-bold text-slate-900" x-text="velgTypes[selectedVelgIndex]?.name"></p>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Total Produksi</span>
-                        <p class="text-sm font-bold text-brand-700" x-text="(isAllMode() ? calculateGrandTotalProd() : (velgTypes[selectedVelgIndex]?.totalProd || 0)) + ' pcs'"></p>
+                        <p class="text-sm font-bold text-brand-700" x-text="(velgTypes[selectedVelgIndex]?.totalProd || 0) + ' pcs'"></p>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Total Reject Saat Ini</span>
-                        <p class="text-sm font-bold text-rose-600" x-text="(isAllMode() ? calculateGrandTotalReject() : calculateVelgTotalReject(selectedVelgIndex)) + ' pcs'"></p>
+                        <p class="text-sm font-bold text-rose-600" x-text="calculateVelgTotalReject(selectedVelgIndex) + ' pcs'"></p>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-medium">Ratio Reject</span>
-                        <p class="text-sm font-bold" :class="getRatioColorClass(isAllMode() ? calculateGrandRatio() : calculateVelgRatio(selectedVelgIndex))" x-text="(isAllMode() ? calculateGrandRatio() : calculateVelgRatio(selectedVelgIndex)) + '%'"></p>
+                        <p class="text-sm font-bold" :class="getRatioColorClass(calculateVelgRatio(selectedVelgIndex))" x-text="calculateVelgRatio(selectedVelgIndex) + '%'"></p>
                     </div>
-                </div>
-
-                <!-- All Mode Sync Notice -->
-                <div x-show="isAllMode()" class="mb-4 flex items-center gap-2 bg-brand-50 border border-brand-200 text-brand-700 text-[11px] font-medium px-3 py-2 rounded-lg">
-                    <i data-lucide="repeat" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                    <span>Mode Sinkron Aktif: setiap input reject manual (+/-) akan diterapkan ke <strong>SEMUA type velg</strong> sekaligus (<span x-text="velgTypes.length"></span> type).</span>
                 </div>
 
                 <!-- Process Category Selector (Casting vs Machining) -->
@@ -446,13 +444,13 @@
                             :class="counterCategory === 'casting' ? 'bg-slate-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                             class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                         <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
-                        CASTING DEFECTS (<span x-text="isAllMode() ? calculateGrandSubtotal('casting') : calculateSubtotal(selectedVelgIndex, 'casting')"></span>)
+                        CASTING DEFECTS (<span x-text="calculateSubtotal(selectedVelgIndex, 'casting')"></span>)
                     </button>
                     <button @click="counterCategory = 'machining'" 
                             :class="counterCategory === 'machining' ? 'bg-slate-800 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                             class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
                         <i data-lucide="cog" class="w-4 h-4 text-sky-400"></i>
-                        MACHINING DEFECTS (<span x-text="isAllMode() ? calculateGrandSubtotal('machining') : calculateSubtotal(selectedVelgIndex, 'machining')"></span>)
+                        MACHINING DEFECTS (<span x-text="calculateSubtotal(selectedVelgIndex, 'machining')"></span>)
                     </button>
                 </div>
 
@@ -465,7 +463,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <template x-for="item in getFilteredCounterDefects()" :key="counterCategory + '-' + item.id">
                         <div class="border rounded-xl p-3 flex flex-col justify-between transition hover:shadow-md bg-white"
-                             :class="getDisplayItemValue(item.id) > 0 ? (isAllMode() ? 'border-brand-400 bg-brand-50/40' : 'border-amber-400 bg-amber-50/40') : 'border-slate-200'">
+                             :class="getDisplayItemValue(item.id) > 0 ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200'">
                             
                             <div class="mb-2">
                                 <div class="flex items-center justify-between mb-1">
@@ -477,15 +475,15 @@
 
                             <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
                                 <span class="text-lg font-mono font-extrabold"
-                                      :class="getDisplayItemValue(item.id) > 0 ? (isAllMode() ? 'text-brand-700' : 'text-amber-700') : 'text-slate-400'"
+                                      :class="getDisplayItemValue(item.id) > 0 ? 'text-amber-700' : 'text-slate-400'"
                                       x-text="getDisplayItemValue(item.id)"></span>
 
                                 <div class="flex items-center space-x-1">
-                                    <button @click="isAllMode() ? adjustDefectCountAll(counterCategory, item.id, -1) : adjustDefectCount(selectedVelgIndex, counterCategory, item.id, -1)" 
+                                    <button @click="adjustDefectCount(selectedVelgIndex, counterCategory, item.id, -1)" 
                                             class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95">
                                         -
                                     </button>
-                                    <button @click="isAllMode() ? adjustDefectCountAll(counterCategory, item.id, 1) : adjustDefectCount(selectedVelgIndex, counterCategory, item.id, 1)" 
+                                    <button @click="adjustDefectCount(selectedVelgIndex, counterCategory, item.id, 1)" 
                                             class="w-10 h-8 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center justify-center shadow transition active:scale-95">
                                         +
                                     </button>
@@ -615,6 +613,62 @@
                         </div>
                     </div>
                 </template>
+            </div>
+        </div>
+
+        <!-- MODAL: TAMBAH ITEM REJECT BARU -->
+        <div x-show="showAddDefectModal" x-cloak
+             class="fixed inset-0 bg-slate-900/50 z-40 flex items-center justify-center p-4 no-print"
+             @keydown.escape.window="showAddDefectModal = false">
+            <div @click.outside="showAddDefectModal = false" class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="list-plus" class="w-4 h-4 text-amber-600"></i>
+                        Tambah Item Reject Baru
+                    </h3>
+                    <button @click="showAddDefectModal = false" class="text-slate-400 hover:text-slate-700">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Kategori</label>
+                        <div class="flex gap-2">
+                            <button @click="newDefectForm.category = 'casting'"
+                                    :class="newDefectForm.category === 'casting' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'"
+                                    class="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition">CASTING</button>
+                            <button @click="newDefectForm.category = 'machining'"
+                                    :class="newDefectForm.category === 'machining' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'"
+                                    class="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition">MACHINING</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Defect / Cacat</label>
+                        <input type="text" x-model="newDefectForm.name" placeholder="Contoh: Retak Rambut" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Kode</label>
+                            <input type="text" x-model="newDefectForm.code" placeholder="Contoh: RR" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">STD</label>
+                            <input type="number" min="0" x-model.number="newDefectForm.std" placeholder="0" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                    <p x-show="newDefectFormError" x-text="newDefectFormError" class="text-xs text-rose-600 font-medium"></p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 p-4 border-t border-slate-100">
+                    <button @click="showAddDefectModal = false" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                        Batal
+                    </button>
+                    <button @click="submitNewDefect()" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        Tambahkan
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -765,6 +819,11 @@
                 paretoChartInstance: null,
                 categoryChartInstance: null,
 
+                // Add Reject Item Modal
+                showAddDefectModal: false,
+                newDefectForm: { category: 'casting', name: '', code: '', std: 0 },
+                newDefectFormError: '',
+
                 metadata: {
                     date: new Date().toISOString().split('T')[0],
                     shift: '1',
@@ -889,6 +948,62 @@
                     }
                 },
 
+                openAddDefectModal(category = 'casting') {
+                    this.newDefectForm = { category: category, name: '', code: '', std: 0 };
+                    this.newDefectFormError = '';
+                    this.showAddDefectModal = true;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                // Slugify a defect name into a stable, unique id key used across all velg records.
+                slugifyDefectId(name) {
+                    let base = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                    if (!base) base = 'defect';
+                    const existingIds = new Set([...this.castingDefects, ...this.machiningDefects].map(d => d.id));
+                    let candidate = base;
+                    let suffix = 1;
+                    while (existingIds.has(candidate)) {
+                        suffix += 1;
+                        candidate = base + '_' + suffix;
+                    }
+                    return candidate;
+                },
+
+                submitNewDefect() {
+                    const name = this.newDefectForm.name.trim();
+                    const code = this.newDefectForm.code.trim().toUpperCase();
+                    const std = this.newDefectForm.std || 0;
+
+                    if (!name) {
+                        this.newDefectFormError = 'Nama defect wajib diisi.';
+                        return;
+                    }
+                    if (!code) {
+                        this.newDefectFormError = 'Kode defect wajib diisi.';
+                        return;
+                    }
+
+                    const category = this.newDefectForm.category === 'machining' ? 'machining' : 'casting';
+                    const newId = this.slugifyDefectId(name + '_' + code);
+                    const newItem = { id: newId, name: name, code: code, std: std };
+
+                    if (category === 'casting') {
+                        this.castingDefects.push(newItem);
+                    } else {
+                        this.machiningDefects.push(newItem);
+                    }
+
+                    // Ensure every existing velg type has a 0 entry for the new defect item.
+                    this.velgTypes.forEach(velg => {
+                        if (velg[category][newId] === undefined) {
+                            velg[category][newId] = 0;
+                        }
+                    });
+
+                    this.showAddDefectModal = false;
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
                 loadSampleData() {
                     this.velgTypes = [
                         this.createEmptyVelg('DW 15"'),
@@ -983,21 +1098,13 @@
                 },
 
                 // Quick Counter Helpers
-                isAllMode() {
-                    return this.selectedVelgIndex === 'all';
-                },
-
                 getItemValue(velgIdx, category, defectId) {
                     const velg = this.velgTypes[velgIdx];
                     return velg ? (velg[category][defectId] || 0) : 0;
                 },
 
-                // Displays the item value for the currently selected mode.
-                // In All Mode, shows the combined (summed) reject count across all velg types.
+                // Displays the item value for the currently selected velg type.
                 getDisplayItemValue(defectId) {
-                    if (this.isAllMode()) {
-                        return this.calculateDefectTotal(this.counterCategory, defectId);
-                    }
                     return this.getItemValue(this.selectedVelgIndex, this.counterCategory, defectId);
                 },
 
@@ -1008,14 +1115,6 @@
                         const nextVal = Math.max(0, current + amount);
                         velg[category][defectId] = nextVal;
                     }
-                },
-
-                // All Mode: synchronize a manual reject adjustment across every velg type at once.
-                adjustDefectCountAll(category, defectId, amount) {
-                    this.velgTypes.forEach(velg => {
-                        const current = velg[category][defectId] || 0;
-                        velg[category][defectId] = Math.max(0, current + amount);
-                    });
                 },
 
                 getFilteredCounterDefects() {
