@@ -1359,9 +1359,24 @@
 
                 getFilteredCounterDefects() {
                     const list = this.counterCategory === 'casting' ? this.castingDefects : this.machiningDefects;
-                    if (!this.counterSearch.trim()) return list;
-                    const query = this.counterSearch.toLowerCase();
-                    return list.filter(item => item.name.toLowerCase().includes(query) || item.code.toLowerCase().includes(query));
+                    let result = list;
+                    if (this.counterSearch.trim()) {
+                        const query = this.counterSearch.toLowerCase();
+                        result = list.filter(item => item.name.toLowerCase().includes(query) || item.code.toLowerCase().includes(query));
+                    }
+                    // Sort: items with active quantity (> 0) float to the top, so operators
+                    // can quickly find the item they're currently counting. Ties keep original order.
+                    return result
+                        .map((item, originalIndex) => ({ item, originalIndex }))
+                        .sort((a, b) => {
+                            const valA = this.getDisplayItemValue(a.item.id);
+                            const valB = this.getDisplayItemValue(b.item.id);
+                            const activeA = valA > 0 ? 1 : 0;
+                            const activeB = valB > 0 ? 1 : 0;
+                            if (activeA !== activeB) return activeB - activeA;
+                            return a.originalIndex - b.originalIndex;
+                        })
+                        .map(entry => entry.item);
                 },
 
                 onDefectInput() {
@@ -1484,7 +1499,13 @@
 
                 saveCurrentSheet() {
                     const now = new Date();
+                    // Key used to detect "same day" saves: based on the Tanggal Pemeriksaan (metadata.date)
+                    // and the Shift + Line, so different shifts/lines on the same date still get separate records.
+                    const saveKey = this.metadata.date + '|' + this.metadata.shift + '|' + this.metadata.line;
+
                     const sheetRecord = {
+                        saveKey: saveKey,
+                        savedDate: this.metadata.date,
                         timestamp: now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) +
                                    ', ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
                         metadata: { ...this.metadata },
@@ -1496,13 +1517,24 @@
                         }
                     };
 
+                    // Look for an existing record with the same Tanggal + Shift + Line.
+                    // If found -> overwrite it in place (update jam/timestamp + data), do not create a new entry.
+                    // If not found (different date, or different shift/line) -> create a new entry.
+                    const existingIndex = this.savedSheets.findIndex(s => s.saveKey === saveKey);
+
+                    let toastMessage = 'Checksheet berhasil disimpan ke Riwayat!';
+                    if (existingIndex !== -1) {
+                        this.savedSheets.splice(existingIndex, 1);
+                        toastMessage = 'Riwayat hari ini diperbarui (jam & data ditimpa)!';
+                    }
+
                     this.savedSheets.unshift(sheetRecord);
                     localStorage.setItem('qc_velg_sheets', JSON.stringify(this.savedSheets));
                     
                     // User feedback notification banner
                     const toast = document.createElement('div');
                     toast.className = 'fixed bottom-4 right-4 bg-emerald-700 text-white px-4 py-3 rounded-xl shadow-lg z-50 text-xs font-semibold flex items-center gap-2';
-                    toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Checksheet berhasil disimpan ke Riwayat!`;
+                    toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> ${toastMessage}`;
                     document.body.appendChild(toast);
                     lucide.createIcons();
                     setTimeout(() => toast.remove(), 3000);
