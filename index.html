@@ -400,7 +400,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
                     <div>
                         <h2 class="text-base font-bold text-slate-800">Mode Counter Cepat Operator Lapangan</h2>
-                        <p class="text-xs text-slate-500">Pilih Type Velg lalu tekan tombol + / - untuk menambah hitungan cacat secara langsung saat inspeksi.</p>
+                        <p class="text-xs text-slate-500">Pilih Type Velg lalu tekan tombol + / - untuk menambah hitungan reject.</p>
                     </div>
 
                     <!-- Selected Velg Selector -->
@@ -598,7 +598,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                     <h2 class="text-base font-bold text-slate-800">Riwayat Checksheet Tersimpan</h2>
-                    <p class="text-xs text-slate-500">Daftar inspeksi QC yang tersimpan di memori lokal peramban.</p>
+                    <p class="text-xs text-slate-500">Daftar inspeksi QC yang tersimpan di memori lokal.</p>
                 </div>
                 <button @click="clearAllHistory()" x-show="savedSheets.length > 0" class="text-xs text-rose-600 hover:text-rose-800 underline">
                     Hapus Semua Riwayat
@@ -994,7 +994,8 @@
                     { id: 'gb', name: 'Gyaku Bari', code: 'GB', std: 130 },
                     { id: 'kkn_c', name: 'Kurokawa Hub / Flange (LP)', code: 'KKN', std: 183 },
                     { id: 'hkf', name: 'Hakidashi Furyou', code: 'HKF', std: 134 },
-                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150 }
+                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150 },
+                    { id: 'ds', name: 'Disc Su', code: 'DS', std: 135 }
                 ],
 
                 machiningDefects: [
