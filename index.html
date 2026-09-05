@@ -193,7 +193,7 @@
                             Mode Reject
                         </button>
                         <button @click="qcMode = 'repair'"
-                                :class="qcMode === 'repair' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                                :class="qcMode === 'repair' ? 'bg-amber-500 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
                                 class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
                             <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
                             Mode Repair
@@ -206,7 +206,7 @@
                     </button>
                     <button @click="openAddDefectModal('casting')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
                         <i data-lucide="list-plus" class="w-4 h-4"></i>
-                        Tambah Item Reject
+                        Tambah Item
                     </button>
                     <button @click="openAddCounterModal()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
                         <i data-lucide="package-plus" class="w-4 h-4"></i>
@@ -219,10 +219,10 @@
 
                 <div class="flex items-center gap-4 text-xs font-medium text-slate-600">
                     <span class="flex items-center gap-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Ratio Normal (≤ <span x-text="targetRatio"></span>%)
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Ratio Normal (≤ <span x-text="getActiveTargetRatio()"></span>%)
                     </span>
                     <span class="flex items-center gap-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Ratio Tinggi (> <span x-text="targetRatio"></span>%)
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Ratio Tinggi (> <span x-text="getActiveTargetRatio()"></span>%)
                     </span>
                     <button @click="openTargetRatioModal()" class="text-[10px] text-slate-500 hover:text-brand-700 underline flex items-center gap-1">
                         <i data-lucide="settings-2" class="w-3 h-3"></i>
@@ -315,7 +315,7 @@
                                 </td>
                             </tr>
 
-                            <template x-for="(item, dIdx) in castingDefects" :key="'c-'+dIdx">
+                            <template x-for="(item, dIdx) in getDefectList('casting')" :key="'c-'+dIdx">
                                 <tr class="hover:bg-slate-50 border-b border-slate-200 transition">
                                     <td class="p-2 border-r border-slate-200 font-medium text-slate-800 sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center justify-between">
                                         <span x-text="item.name"></span>
@@ -357,7 +357,7 @@
                                 </td>
                             </tr>
 
-                            <template x-for="(item, dIdx) in machiningDefects" :key="'m-'+dIdx">
+                            <template x-for="(item, dIdx) in getDefectList('machining')" :key="'m-'+dIdx">
                                 <tr class="hover:bg-slate-50 border-b border-slate-200 transition">
                                     <td class="p-2 border-r border-slate-200 font-medium text-slate-800 sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center justify-between">
                                         <span x-text="item.name"></span>
@@ -429,7 +429,7 @@
                                 Reject
                             </button>
                             <button @click="qcMode = 'repair'"
-                                    :class="qcMode === 'repair' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                                    :class="qcMode === 'repair' ? 'bg-amber-500 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
                                 <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
                                 Repair
@@ -567,7 +567,7 @@
                         Mode Reject
                     </button>
                     <button @click="qcMode = 'repair'"
-                            :class="qcMode === 'repair' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                            :class="qcMode === 'repair' ? 'bg-amber-500 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
                             class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
                         <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
                         Mode Repair
@@ -697,7 +697,7 @@
             </div>
         </div>
 
-        <!-- MODAL: TAMBAH ITEM REJECT BARU -->
+        <!-- MODAL: TAMBAH ITEM REJECT / REPAIR BARU -->
         <div x-show="showAddDefectModal" x-cloak
              class="fixed inset-0 bg-slate-900/50 z-40 flex items-center justify-center p-4 no-print"
              @keydown.escape.window="showAddDefectModal = false">
@@ -705,7 +705,7 @@
                 <div class="flex items-center justify-between p-4 border-b border-slate-100">
                     <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                         <i data-lucide="list-plus" class="w-4 h-4 text-amber-600"></i>
-                        Tambah Item Reject Baru
+                        Tambah Item Baru
                     </h3>
                     <button @click="showAddDefectModal = false" class="text-slate-400 hover:text-slate-700">
                         <i data-lucide="x" class="w-4 h-4"></i>
@@ -713,6 +713,21 @@
                 </div>
 
                 <div class="p-4 space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tipe Item</label>
+                        <div class="flex gap-2">
+                            <button @click="newDefectForm.type = 'reject'"
+                                    :class="newDefectForm.type === 'reject' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'"
+                                    class="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="x-octagon" class="w-3.5 h-3.5"></i> REJECT
+                            </button>
+                            <button @click="newDefectForm.type = 'repair'"
+                                    :class="newDefectForm.type === 'repair' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'"
+                                    class="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="wrench" class="w-3.5 h-3.5"></i> REPAIR
+                            </button>
+                        </div>
+                    </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Kategori</label>
                         <div class="flex gap-2">
@@ -725,21 +740,17 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Defect / Cacat</label>
-                        <input type="text" x-model="newDefectForm.name" placeholder="Contoh: Retak Rambut" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="newDefectForm.type === 'repair' ? 'Nama Item Repair' : 'Nama Defect / Cacat'"></label>
+                        <input type="text" x-model="newDefectForm.name" :placeholder="newDefectForm.type === 'repair' ? 'Contoh: Las Tambal' : 'Contoh: Retak Rambut'" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
                     </div>
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 mb-1">Kode</label>
                             <input type="text" x-model="newDefectForm.code" placeholder="Contoh: RR" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none uppercase">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">STD Reject</label>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="newDefectForm.type === 'repair' ? 'STD Repair' : 'STD Reject'"></label>
                             <input type="number" min="0" x-model.number="newDefectForm.std" placeholder="0" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">STD Repair</label>
-                            <input type="number" min="0" x-model.number="newDefectForm.stdRepair" placeholder="0" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
                         </div>
                     </div>
                     <p x-show="newDefectFormError" x-text="newDefectFormError" class="text-xs text-rose-600 font-medium"></p>
@@ -816,7 +827,7 @@
             </div>
         </div>
 
-        <!-- MODAL: ATUR TARGET RATIO REJECT -->
+        <!-- MODAL: ATUR TARGET RATIO REJECT & REPAIR -->
         <div x-show="showTargetRatioModal" x-cloak
              class="fixed inset-0 bg-slate-900/50 z-40 flex items-center justify-center p-4 no-print"
              @keydown.escape.window="showTargetRatioModal = false">
@@ -824,21 +835,31 @@
                 <div class="flex items-center justify-between p-4 border-b border-slate-100">
                     <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                         <i data-lucide="settings-2" class="w-4 h-4 text-brand-600"></i>
-                        Atur Target Ratio Reject
+                        Atur Target Ratio
                     </h3>
                     <button @click="showTargetRatioModal = false" class="text-slate-400 hover:text-slate-700">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
 
-                <div class="p-4 space-y-3">
+                <div class="p-4 space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Target Ratio Reject (%)</label>
-                        <input type="number" min="0.1" step="0.1" x-model.number="targetRatioInput" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
-                        <p class="text-[10px] text-slate-400 mt-1">
-                            Ratio ≤ nilai ini akan ditandai <strong class="text-emerald-600">Normal</strong>. Ratio di atas nilai ini akan ditandai <strong class="text-rose-600">Tinggi</strong>.
-                        </p>
+                        <label class="block text-xs font-semibold text-rose-600 mb-1 flex items-center gap-1">
+                            <i data-lucide="x-octagon" class="w-3.5 h-3.5"></i>
+                            Target Ratio Reject (%)
+                        </label>
+                        <input type="number" min="0.1" step="0.1" x-model.number="targetRatioRejectInput" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-rose-500 outline-none">
                     </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-amber-600 mb-1 flex items-center gap-1">
+                            <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
+                            Target Ratio Repair (%)
+                        </label>
+                        <input type="number" min="0.1" step="0.1" x-model.number="targetRatioRepairInput" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none">
+                    </div>
+                    <p class="text-[10px] text-slate-400">
+                        Ratio ≤ target akan ditandai <strong class="text-emerald-600">Normal</strong>. Ratio di atas target akan ditandai <strong class="text-rose-600">Tinggi</strong>. Target berlaku sesuai mode yang sedang aktif (Reject/Repair).
+                    </p>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 p-4 border-t border-slate-100">
@@ -914,7 +935,7 @@
                     <tr class="font-bold bg-gray-200">
                         <td colspan="100" class="border border-black p-1 text-left" x-text="qcMode === 'repair' ? 'CASTING (REPAIR)' : 'CASTING'"></td>
                     </tr>
-                    <template x-for="item in castingDefects">
+                    <template x-for="item in getDefectList('casting')">
                         <tr>
                             <td class="border border-black p-1" x-text="item.name"></td>
                             <td class="border border-black p-1 text-center font-mono" x-text="item.code"></td>
@@ -939,7 +960,7 @@
                     <tr class="font-bold bg-gray-200">
                         <td colspan="100" class="border border-black p-1 text-left" x-text="qcMode === 'repair' ? 'MACHINING (REPAIR)' : 'MACHINING'"></td>
                     </tr>
-                    <template x-for="item in machiningDefects">
+                    <template x-for="item in getDefectList('machining')">
                         <tr>
                             <td class="border border-black p-1" x-text="item.name"></td>
                             <td class="border border-black p-1 text-center font-mono" x-text="item.code"></td>
@@ -1003,7 +1024,7 @@
 
                 // Add Reject Item Modal
                 showAddDefectModal: false,
-                newDefectForm: { category: 'casting', name: '', code: '', std: 0, stdRepair: 0 },
+                newDefectForm: { type: 'reject', category: 'casting', name: '', code: '', std: 0 },
                 newDefectFormError: '',
 
                 // Add Counter Produk Modal (Type + Produk, akumulasi ke Total Produksi)
@@ -1011,10 +1032,12 @@
                 addCounterForm: { mode: 'existing', velgIndex: 0, newTypeName: '', qty: null },
                 addCounterFormError: '',
 
-                // Target Ratio Reject (%) - ambang batas Normal vs Tinggi, bisa diedit user
-                targetRatio: 3.0,
+                // Target Ratio (%) - ambang batas Normal vs Tinggi, terpisah untuk Reject dan Repair, bisa diedit user
+                targetRatioReject: 3.0,
+                targetRatioRepair: 1.5,
                 showTargetRatioModal: false,
-                targetRatioInput: 3.0,
+                targetRatioRejectInput: 3.0,
+                targetRatioRepairInput: 1.5,
 
                 metadata: {
                     date: new Date().toISOString().split('T')[0],
@@ -1025,54 +1048,59 @@
 
                 // Complete Defect Dictionary transcribed directly from the image
                 castingDefects: [
-                    { id: 'dw', name: 'Dhisuku Ware', code: 'DW', std: 178, stdRepair: 89 },
-                    { id: 'hs', name: 'Habu Su', code: 'HS', std: 119, stdRepair: 60 },
-                    { id: 'yz', name: 'Yu Zakai', code: 'YZ', std: 124, stdRepair: 62 },
-                    { id: 'kr', name: 'Kirai', code: 'KR', std: 112, stdRepair: 56 },
-                    { id: 'rsb', name: 'Rimu Su Bead Inner', code: 'RSB', std: 179, stdRepair: 90 },
-                    { id: 'rso', name: 'Rimu Su Bead Outer', code: 'RSO', std: 118, stdRepair: 59 },
-                    { id: 'rsd', name: 'Rimu Su Dalam', code: 'RSD', std: 180, stdRepair: 90 },
-                    { id: 'rsh', name: 'Rimu Su Hump', code: 'RSH', std: 182, stdRepair: 91 },
-                    { id: 'rs', name: 'Rimu Su Luar', code: 'RS', std: 181, stdRepair: 90 },
-                    { id: 'is', name: 'Ishoumen Su', code: 'IS', std: 113, stdRepair: 56 },
-                    { id: 'bas', name: 'Boruto Ana Su', code: 'BAS', std: 120, stdRepair: 60 },
-                    { id: 'us', name: 'Ura Su', code: 'US', std: 122, stdRepair: 61 },
-                    { id: 'knn', name: 'Kanaami Nokori', code: 'KNN', std: 128, stdRepair: 64 },
-                    { id: 'hkb', name: 'Hike Su', code: 'HKB', std: 123, stdRepair: 62 },
-                    { id: 'fs', name: 'Flange Su Inner', code: 'FS', std: 116, stdRepair: 58 },
-                    { id: 'fo', name: 'Flange Su Outer', code: 'FO', std: 117, stdRepair: 58 },
-                    { id: 'ih', name: 'I Hada Heko', code: 'IH', std: 124, stdRepair: 62 },
-                    { id: 'it', name: 'I Hada Totsu', code: 'IT', std: 125, stdRepair: 62 },
-                    { id: 'bz_c', name: 'Boruto Ana Zure', code: 'BZ', std: 126, stdRepair: 63 },
-                    { id: 'hsk', name: 'Hub Su Cap', code: 'HSK', std: 127, stdRepair: 64 },
-                    { id: 'ik', name: 'Ibutsu Kamikomi', code: 'IK', std: 128, stdRepair: 64 },
-                    { id: 'ksn', name: 'Katsu Niku', code: 'KSN', std: 135, stdRepair: 68 },
-                    { id: 'vs', name: 'Valve Su', code: 'VS', std: 129, stdRepair: 64 },
-                    { id: 'em', name: 'Eaa More', code: 'EM', std: 114, stdRepair: 57 },
-                    { id: 'gb', name: 'Gyaku Bari', code: 'GB', std: 130, stdRepair: 65 },
-                    { id: 'kkn_c', name: 'Kurokawa Hub / Flange (LP)', code: 'KKN', std: 183, stdRepair: 92 },
-                    { id: 'hkf', name: 'Hakidashi Furyou', code: 'HKF', std: 134, stdRepair: 67 },
-                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150, stdRepair: 75 }
+                    { id: 'dw', name: 'Dhisuku Ware', code: 'DW', std: 178 },
+                    { id: 'hs', name: 'Habu Su', code: 'HS', std: 119 },
+                    { id: 'yz', name: 'Yu Zakai', code: 'YZ', std: 124 },
+                    { id: 'kr', name: 'Kirai', code: 'KR', std: 112 },
+                    { id: 'rsb', name: 'Rimu Su Bead Inner', code: 'RSB', std: 179 },
+                    { id: 'rso', name: 'Rimu Su Bead Outer', code: 'RSO', std: 118 },
+                    { id: 'rsd', name: 'Rimu Su Dalam', code: 'RSD', std: 180 },
+                    { id: 'rsh', name: 'Rimu Su Hump', code: 'RSH', std: 182 },
+                    { id: 'rs', name: 'Rimu Su Luar', code: 'RS', std: 181 },
+                    { id: 'is', name: 'Ishoumen Su', code: 'IS', std: 113 },
+                    { id: 'bas', name: 'Boruto Ana Su', code: 'BAS', std: 120 },
+                    { id: 'us', name: 'Ura Su', code: 'US', std: 122 },
+                    { id: 'knn', name: 'Kanaami Nokori', code: 'KNN', std: 128 },
+                    { id: 'hkb', name: 'Hike Su', code: 'HKB', std: 123 },
+                    { id: 'fs', name: 'Flange Su Inner', code: 'FS', std: 116 },
+                    { id: 'fo', name: 'Flange Su Outer', code: 'FO', std: 117 },
+                    { id: 'ih', name: 'I Hada Heko', code: 'IH', std: 124 },
+                    { id: 'it', name: 'I Hada Totsu', code: 'IT', std: 125 },
+                    { id: 'bz_c', name: 'Boruto Ana Zure', code: 'BZ', std: 126 },
+                    { id: 'hsk', name: 'Hub Su Cap', code: 'HSK', std: 127 },
+                    { id: 'ik', name: 'Ibutsu Kamikomi', code: 'IK', std: 128 },
+                    { id: 'ksn', name: 'Katsu Niku', code: 'KSN', std: 135 },
+                    { id: 'vs', name: 'Valve Su', code: 'VS', std: 129 },
+                    { id: 'em', name: 'Eaa More', code: 'EM', std: 114 },
+                    { id: 'gb', name: 'Gyaku Bari', code: 'GB', std: 130 },
+                    { id: 'kkn_c', name: 'Kurokawa Hub / Flange (LP)', code: 'KKN', std: 183 },
+                    { id: 'hkf', name: 'Hakidashi Furyou', code: 'HKF', std: 134 },
+                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150 }
                 ],
 
                 machiningDefects: [
-                    { id: 'ssf', name: 'Sessaku Furyou', code: 'SSF', std: 141, stdRepair: 70 },
-                    { id: 'bb', name: 'Bibiri Bolt hole', code: 'BB', std: 142, stdRepair: 71 },
-                    { id: 'bv', name: 'Bibiri Valve hole', code: 'BV', std: 165, stdRepair: 82 },
-                    { id: 'sf', name: 'Sunpou Furyou', code: 'SF', std: 143, stdRepair: 72 },
-                    { id: 'dk', name: 'Dakon', code: 'DK', std: 144, stdRepair: 72 },
-                    { id: 'vz', name: 'Valve Zure', code: 'VZ', std: 145, stdRepair: 72 },
-                    { id: 'fz', name: 'Flange Zure', code: 'FZ', std: 146, stdRepair: 73 },
-                    { id: 'bz_m', name: 'Mentori Lub. Baut Depan Zure', code: 'BZ', std: 147, stdRepair: 74 },
-                    { id: 'ktf', name: 'Kako Tenaoshi Furyou', code: 'KTF', std: 148, stdRepair: 74 },
-                    { id: 'kkn_m', name: 'Kurokawa Nokori', code: 'KKN', std: 149, stdRepair: 74 },
-                    { id: 'hf', name: 'Henido Furyou', code: 'HF', std: 150, stdRepair: 75 },
-                    { id: 'bl', name: 'Balance', code: 'BL', std: 157, stdRepair: 78 },
-                    { id: 'ss', name: 'Sessaku Suji', code: 'SS', std: 151, stdRepair: 76 },
-                    { id: 'hk', name: 'Hataki Kizu', code: 'HK', std: 153, stdRepair: 76 },
-                    { id: 'cg', name: 'Chip Gompal', code: 'CG', std: 156, stdRepair: 78 },
-                    { id: 'bi', name: 'Bibiri Rim , Ishoumen', code: 'BI', std: 166, stdRepair: 83 }
+                    { id: 'ssf', name: 'Sessaku Furyou', code: 'SSF', std: 141 },
+                    { id: 'bb', name: 'Bibiri Bolt hole', code: 'BB', std: 142 },
+                    { id: 'bv', name: 'Bibiri Valve hole', code: 'BV', std: 165 },
+                    { id: 'sf', name: 'Sunpou Furyou', code: 'SF', std: 143 },
+                    { id: 'dk', name: 'Dakon', code: 'DK', std: 144 },
+                    { id: 'vz', name: 'Valve Zure', code: 'VZ', std: 145 },
+                    { id: 'fz', name: 'Flange Zure', code: 'FZ', std: 146 },
+                    { id: 'bz_m', name: 'Mentori Lub. Baut Depan Zure', code: 'BZ', std: 147 },
+                    { id: 'ktf', name: 'Kako Tenaoshi Furyou', code: 'KTF', std: 148 },
+                    { id: 'kkn_m', name: 'Kurokawa Nokori', code: 'KKN', std: 149 },
+                    { id: 'hf', name: 'Henido Furyou', code: 'HF', std: 150 },
+                    { id: 'bl', name: 'Balance', code: 'BL', std: 157 },
+                    { id: 'ss', name: 'Sessaku Suji', code: 'SS', std: 151 },
+                    { id: 'hk', name: 'Hataki Kizu', code: 'HK', std: 153 },
+                    { id: 'cg', name: 'Chip Gompal', code: 'CG', std: 156 },
+                    { id: 'bi', name: 'Bibiri Rim , Ishoumen', code: 'BI', std: 166 }
                 ],
+
+                // Daftar item Repair - terpisah sepenuhnya dari item Reject (nama, code, dan std beda).
+                // Mulai kosong, ditambahkan manual lewat tombol "Tambah Item" > pilih tipe "Repair".
+                castingRepairDefects: [],
+                machiningRepairDefects: [],
 
                 velgTypes: [],
                 savedSheets: [],
@@ -1096,9 +1124,13 @@
                     }
 
                     // Load saved target ratio (%) from localStorage
-                    const savedTargetRatio = localStorage.getItem('qc_velg_target_ratio');
-                    if (savedTargetRatio && !isNaN(Number(savedTargetRatio))) {
-                        this.targetRatio = Number(savedTargetRatio);
+                    const savedTargetRatioReject = localStorage.getItem('qc_velg_target_ratio_reject');
+                    if (savedTargetRatioReject && !isNaN(Number(savedTargetRatioReject))) {
+                        this.targetRatioReject = Number(savedTargetRatioReject);
+                    }
+                    const savedTargetRatioRepair = localStorage.getItem('qc_velg_target_ratio_repair');
+                    if (savedTargetRatioRepair && !isNaN(Number(savedTargetRatioRepair))) {
+                        this.targetRatioRepair = Number(savedTargetRatioRepair);
                     }
 
                     // Pre-fill with example data for rich preview
@@ -1129,12 +1161,12 @@
                     const machiningObj = {};
                     this.machiningDefects.forEach(d => machiningObj[d.id] = 0);
 
-                    // Data Repair - struktur sama seperti casting/machining reject, tapi disimpan terpisah
+                    // Data Repair - item repair adalah daftar terpisah (castingRepairDefects/machiningRepairDefects)
                     const repairCastingObj = {};
-                    this.castingDefects.forEach(d => repairCastingObj[d.id] = 0);
+                    this.castingRepairDefects.forEach(d => repairCastingObj[d.id] = 0);
 
                     const repairMachiningObj = {};
-                    this.machiningDefects.forEach(d => repairMachiningObj[d.id] = 0);
+                    this.machiningRepairDefects.forEach(d => repairMachiningObj[d.id] = 0);
 
                     return {
                         name: name,
@@ -1163,17 +1195,21 @@
                 },
 
                 openAddDefectModal(category = 'casting') {
-                    this.newDefectForm = { category: category, name: '', code: '', std: 0, stdRepair: 0 };
+                    this.newDefectForm = { type: this.qcMode === 'repair' ? 'repair' : 'reject', category: category, name: '', code: '', std: 0 };
                     this.newDefectFormError = '';
                     this.showAddDefectModal = true;
                     this.$nextTick(() => lucide.createIcons());
                 },
 
-                // Slugify a defect name into a stable, unique id key used across all velg records.
-                slugifyDefectId(name) {
+                // Slugify a defect name into a stable, unique id key, unik terhadap daftar yang
+                // relevan (reject: castingDefects+machiningDefects, repair: castingRepairDefects+machiningRepairDefects).
+                slugifyDefectId(name, type = 'reject') {
                     let base = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
                     if (!base) base = 'defect';
-                    const existingIds = new Set([...this.castingDefects, ...this.machiningDefects].map(d => d.id));
+                    const sourceLists = type === 'repair'
+                        ? [...this.castingRepairDefects, ...this.machiningRepairDefects]
+                        : [...this.castingDefects, ...this.machiningDefects];
+                    const existingIds = new Set(sourceLists.map(d => d.id));
                     let candidate = base;
                     let suffix = 1;
                     while (existingIds.has(candidate)) {
@@ -1187,37 +1223,37 @@
                     const name = this.newDefectForm.name.trim();
                     const code = this.newDefectForm.code.trim().toUpperCase();
                     const std = this.newDefectForm.std || 0;
-                    const stdRepair = this.newDefectForm.stdRepair || 0;
+                    const type = this.newDefectForm.type === 'repair' ? 'repair' : 'reject';
 
                     if (!name) {
-                        this.newDefectFormError = 'Nama defect wajib diisi.';
+                        this.newDefectFormError = 'Nama item wajib diisi.';
                         return;
                     }
                     if (!code) {
-                        this.newDefectFormError = 'Kode defect wajib diisi.';
+                        this.newDefectFormError = 'Kode item wajib diisi.';
                         return;
                     }
 
                     const category = this.newDefectForm.category === 'machining' ? 'machining' : 'casting';
-                    const newId = this.slugifyDefectId(name + '_' + code);
-                    const newItem = { id: newId, name: name, code: code, std: std, stdRepair: stdRepair };
+                    const newId = this.slugifyDefectId(name + '_' + code, type);
+                    const newItem = { id: newId, name: name, code: code, std: std };
 
-                    if (category === 'casting') {
-                        this.castingDefects.push(newItem);
+                    // Tentukan daftar tujuan dan key data velg sesuai tipe (reject/repair) & kategori.
+                    let targetList, velgDataKey;
+                    if (type === 'repair') {
+                        targetList = category === 'casting' ? this.castingRepairDefects : this.machiningRepairDefects;
+                        velgDataKey = category === 'casting' ? 'repairCasting' : 'repairMachining';
                     } else {
-                        this.machiningDefects.push(newItem);
+                        targetList = category === 'casting' ? this.castingDefects : this.machiningDefects;
+                        velgDataKey = category;
                     }
+                    targetList.push(newItem);
 
-                    // Ensure every existing velg type has a 0 entry for the new defect item,
-                    // baik di data Reject maupun data Repair.
-                    const repairKey = category === 'casting' ? 'repairCasting' : 'repairMachining';
+                    // Pastikan setiap type velg yang sudah ada punya entry 0 untuk item baru ini.
                     this.velgTypes.forEach(velg => {
-                        if (velg[category][newId] === undefined) {
-                            velg[category][newId] = 0;
-                        }
-                        if (!velg[repairKey]) velg[repairKey] = {};
-                        if (velg[repairKey][newId] === undefined) {
-                            velg[repairKey][newId] = 0;
+                        if (!velg[velgDataKey]) velg[velgDataKey] = {};
+                        if (velg[velgDataKey][newId] === undefined) {
+                            velg[velgDataKey][newId] = 0;
                         }
                     });
 
@@ -1277,22 +1313,31 @@
                 },
 
                 openTargetRatioModal() {
-                    this.targetRatioInput = this.targetRatio;
+                    this.targetRatioRejectInput = this.targetRatioReject;
+                    this.targetRatioRepairInput = this.targetRatioRepair;
                     this.showTargetRatioModal = true;
                     this.$nextTick(() => lucide.createIcons());
                 },
 
                 submitTargetRatio() {
-                    const val = Number(this.targetRatioInput);
-                    if (isNaN(val) || val <= 0) {
+                    const rejectVal = Number(this.targetRatioRejectInput);
+                    const repairVal = Number(this.targetRatioRepairInput);
+                    if (isNaN(rejectVal) || rejectVal <= 0 || isNaN(repairVal) || repairVal <= 0) {
                         return;
                     }
-                    this.targetRatio = val;
-                    localStorage.setItem('qc_velg_target_ratio', String(val));
+                    this.targetRatioReject = rejectVal;
+                    this.targetRatioRepair = repairVal;
+                    localStorage.setItem('qc_velg_target_ratio_reject', String(rejectVal));
+                    localStorage.setItem('qc_velg_target_ratio_repair', String(repairVal));
                     this.showTargetRatioModal = false;
                     if (this.activeTab === 'analytics') {
                         this.updateAnalytics();
                     }
+                },
+
+                // Target ratio yang berlaku, mengikuti mode aktif (reject atau repair)
+                getActiveTargetRatio() {
+                    return this.qcMode === 'repair' ? this.targetRatioRepair : this.targetRatioReject;
                 },
 
                 loadSampleData() {
@@ -1353,9 +1398,19 @@
                     return category === 'machining' ? 'machining' : 'casting';
                 },
 
-                // Mengambil std sesuai mode aktif (std reject vs stdRepair) untuk sebuah defect item.
+                // Mengambil std dari sebuah defect item. Karena item Reject dan Repair kini
+                // adalah daftar terpisah (masing-masing punya std sendiri), tinggal baca item.std.
                 getDefectStd(item) {
-                    return this.qcMode === 'repair' ? (item.stdRepair ?? 0) : (item.std ?? 0);
+                    return item?.std ?? 0;
+                },
+
+                // Mengambil daftar item defect yang sesuai mode aktif (Reject atau Repair)
+                // untuk kategori casting/machining. Nama, code, dan std di masing-masing daftar independen.
+                getDefectList(category) {
+                    if (this.qcMode === 'repair') {
+                        return category === 'machining' ? this.machiningRepairDefects : this.castingRepairDefects;
+                    }
+                    return category === 'machining' ? this.machiningDefects : this.castingDefects;
                 },
 
                 calculateSubtotal(velgIdx, category) {
@@ -1419,14 +1474,14 @@
                     const castingKey = this.getDataKey('casting');
                     const machiningKey = this.getDataKey('machining');
 
-                    this.castingDefects.forEach(d => {
+                    this.getDefectList('casting').forEach(d => {
                         const count = Number((velg[castingKey] || {})[d.id]) || 0;
                         if (count > 0) {
                             combined.push({ name: d.name, code: d.code, count: count, category: 'Casting' });
                         }
                     });
 
-                    this.machiningDefects.forEach(d => {
+                    this.getDefectList('machining').forEach(d => {
                         const count = Number((velg[machiningKey] || {})[d.id]) || 0;
                         if (count > 0) {
                             combined.push({ name: d.name, code: d.code, count: count, category: 'Machining' });
@@ -1443,7 +1498,7 @@
 
                 getRatioColorClass(ratio) {
                     const r = parseFloat(ratio);
-                    if (r > this.targetRatio) return 'text-rose-600 bg-rose-50 font-bold';
+                    if (r > this.getActiveTargetRatio()) return 'text-rose-600 bg-rose-50 font-bold';
                     return 'text-emerald-600 font-bold';
                 },
 
@@ -1472,7 +1527,7 @@
                 },
 
                 getFilteredCounterDefects() {
-                    const list = this.counterCategory === 'casting' ? this.castingDefects : this.machiningDefects;
+                    const list = this.getDefectList(this.counterCategory);
                     let result = list;
                     if (this.counterSearch.trim()) {
                         const query = this.counterSearch.toLowerCase();
@@ -1504,7 +1559,7 @@
                     const grandTotalProd = this.calculateGrandTotalProd();
 
                     // Collect Casting Defect Totals
-                    this.castingDefects.forEach(d => {
+                    this.getDefectList('casting').forEach(d => {
                         const total = this.calculateDefectTotal('casting', d.id);
                         if (total > 0) {
                             allDefects.push({ name: d.name + ' (C)', count: total, category: 'Casting' });
@@ -1512,7 +1567,7 @@
                     });
 
                     // Collect Machining Defect Totals
-                    this.machiningDefects.forEach(d => {
+                    this.getDefectList('machining').forEach(d => {
                         const total = this.calculateDefectTotal('machining', d.id);
                         if (total > 0) {
                             allDefects.push({ name: d.name + ' (M)', count: total, category: 'Machining' });
@@ -1709,7 +1764,7 @@
 
                     // Casting Defects
                     sheetData.push([`--- CASTING ${modeLabel === 'REPAIR' ? 'DEFECTS (REPAIR)' : 'DEFECTS'} ---`]);
-                    this.castingDefects.forEach(d => {
+                    this.getDefectList('casting').forEach(d => {
                         const row = [d.name, d.code, this.getDefectStd(d)];
                         this.velgTypes.forEach((v, idx) => row.push(this.getItemValue(idx, 'casting', d.id)));
                         row.push(this.calculateDefectTotal('casting', d.id));
@@ -1724,7 +1779,7 @@
 
                     // Machining Defects
                     sheetData.push([`--- MACHINING ${modeLabel === 'REPAIR' ? 'DEFECTS (REPAIR)' : 'DEFECTS'} ---`]);
-                    this.machiningDefects.forEach(d => {
+                    this.getDefectList('machining').forEach(d => {
                         const row = [d.name, d.code, this.getDefectStd(d)];
                         this.velgTypes.forEach((v, idx) => row.push(this.getItemValue(idx, 'machining', d.id)));
                         row.push(this.calculateDefectTotal('machining', d.id));
