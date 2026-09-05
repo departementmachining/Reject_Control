@@ -1044,8 +1044,8 @@
                 metadata: {
                     date: new Date().toISOString().split('T')[0],
                     shift: '1',
-                    line: 'Line Casting A',
-                    inspector: 'Budi Santoso'
+                    line: 'Machining',
+                    inspector: 'Nama'
                 },
 
                 // Complete Defect Dictionary transcribed directly from the image
@@ -1110,14 +1110,27 @@
                 { id: 'is', name: 'Ishoumen Su', code: 'IS', std: 113 },
                 { id: 'kj', name: 'Kajiri', code: 'KJ', std: 133 },
                 { id: 'kr', name: 'Kirai', code: 'KR', std: 112 },
-                { id: 'ph', name: 'Pin Hole', code: 'PH', std: 0 },
-                { id: 'th', name: 'Toagat Hadare', code: 'TH', std: 1 },
+                { id: 'ph', name: 'Pin Hole', code: 'PH', std: NoCode },
+                { id: 'th', name: 'Togata Hadare', code: 'TH', std: NoCode },
                 { id: 'ts', name: 'Totsu', code: 'TS', std: 138 },
                 { id: 'us', name: 'Ura Su', code: 'US', std: 122 },
                 { id: 'bsa', name: 'Butsu Alumunium', code: 'BSA', std: 188 }
                 ],
                 
-                machiningRepairDefects: [],
+                machiningRepairDefects: [
+                { id: 'bd', name: 'Bari Disc', code: 'BD', std: 159 },
+                { id: 'bb', name: 'Bibiri', code: 'BB', std: 163 },
+                { id: 'cb', name: 'Cap Bari', code: 'CB', std: 160 },
+                { id: 'cm', name: 'Cap Mentori', code: 'CM', std: 183 },
+                { id: 'dfi', name: 'Dakon Flange Inner', code: 'DFI', std: 158 },
+                { id: 'dfo', name: 'Dakon Flange Outer', code: 'DFO', std: 158 },
+                { id: 'krk', name: 'Molten / kiriko', code: 'KRK', std: 161 },
+                { id: 'ssk', name: 'Sasakure', code: 'SSK', std: 185 },
+                { id: 'bs', name: 'Bari Spoke', code: 'DFI', std: 186 },
+                { id: 'dks', name: 'Dakon Spoke', code: 'DKS', std: 187 },
+                { id: 'ya', name: 'Yasuri Atari', code: 'YA', std: 164 },
+                { id: 'isb', name: 'Ishomen Bari', code: 'ISB', std: 66 }
+                ],
 
                 velgTypes: [],
                 savedSheets: [],
