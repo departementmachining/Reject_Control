@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Checksheet QC Reject - Casting & Machining</title>
+    <title>E-Checksheet QC Reject Velg - Casting & Machining</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -100,7 +100,7 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                            E-Checksheet Reject
+                            E-Checksheet Reject Velg
                             <span class="text-xs font-normal px-2 py-0.5 rounded bg-brand-500/30 text-brand-200 border border-brand-400/30">Casting & Machining</span>
                         </h1>
                         <p class="text-xs text-slate-400">Sistem Digitalisasi Control Quality Reject & Laporan Produksi</p>
@@ -119,7 +119,7 @@
                             :class="activeTab === 'counter' ? 'bg-brand-600 text-white shadow' : 'text-slate-300 hover:text-white'"
                             class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
                         <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i>
-                        Mode Counter
+                        Mode Counter Lapangan
                     </button>
                     <button @click="activeTab = 'analytics'" 
                             :class="activeTab === 'analytics' ? 'bg-brand-600 text-white shadow' : 'text-slate-300 hover:text-white'"
@@ -183,7 +183,23 @@
             
             <!-- Matrix Header Controls -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 no-print">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Toggle Mode: Reject / Repair -->
+                    <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                        <button @click="qcMode = 'reject'"
+                                :class="qcMode === 'reject' ? 'bg-rose-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                                class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="x-octagon" class="w-3.5 h-3.5"></i>
+                            Mode Reject
+                        </button>
+                        <button @click="qcMode = 'repair'"
+                                :class="qcMode === 'repair' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                                class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
+                            <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
+                            Mode Repair
+                        </button>
+                    </div>
+
                     <button @click="addVelgType()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                         Tambah Model/Type Velg
@@ -222,10 +238,10 @@
                         <thead class="bg-slate-100 text-slate-700 sticky top-0 z-20 shadow-sm">
                             <tr>
                                 <th class="p-2.5 border-b border-r border-slate-200 bg-slate-100 min-w-[200px] sticky left-0 z-30 font-bold">
-                                    NAMA DEFECT / CACAT
+                                    <span x-text="qcMode === 'repair' ? 'NAMA ITEM REPAIR' : 'NAMA DEFECT / CACAT'"></span>
                                 </th>
                                 <th class="p-2 border-b border-r border-slate-200 w-16 text-center font-bold bg-slate-100">CODE</th>
-                                <th class="p-2 border-b border-r border-slate-200 w-16 text-center font-bold bg-slate-100">STD</th>
+                                <th class="p-2 border-b border-r border-slate-200 w-16 text-center font-bold bg-slate-100" x-text="qcMode === 'repair' ? 'STD REPAIR' : 'STD'"></th>
 
                                 <!-- Dynamic Columns for each Velg Type -->
                                 <template x-for="(velg, index) in velgTypes" :key="index">
@@ -241,7 +257,7 @@
                                 </template>
 
                                 <th class="p-2 border-b border-slate-200 min-w-[100px] text-center font-bold bg-slate-200 text-slate-800">
-                                    TOTAL REJECT
+                                    <span x-text="qcMode === 'repair' ? 'TOTAL REPAIR' : 'TOTAL REJECT'"></span>
                                 </th>
                             </tr>
 
@@ -263,7 +279,7 @@
                             <!-- Row: Jumlah Reject (Pcs) -->
                             <tr class="bg-amber-50/50 font-semibold border-b border-slate-200">
                                 <td class="p-2 border-r border-slate-200 sticky left-0 bg-amber-50/90 z-10 text-slate-800">
-                                    Jumlah Reject ( Pcs )
+                                    <span x-text="qcMode === 'repair' ? 'Jumlah Repair ( Pcs )' : 'Jumlah Reject ( Pcs )'"></span>
                                 </td>
                                 <td class="border-r border-slate-200 text-center text-slate-400">-</td>
                                 <td class="border-r border-slate-200 text-center text-slate-400">-</td>
@@ -273,10 +289,10 @@
                                 <td class="p-2 text-center font-bold text-rose-800 bg-amber-100 font-mono text-sm" x-text="calculateGrandTotalReject()"></td>
                             </tr>
 
-                            <!-- Row: Ratio Reject (%) -->
+                            <!-- Row: Ratio Reject / Repair (%) -->
                             <tr class="bg-amber-100/70 font-semibold border-b-2 border-slate-300">
                                 <td class="p-2 border-r border-slate-200 sticky left-0 bg-amber-100 z-10 text-slate-900 flex items-center justify-between">
-                                    <span>Ratio Reject ( % )</span>
+                                    <span x-text="qcMode === 'repair' ? 'Ratio Repair ( % )' : 'Ratio Reject ( % )'"></span>
                                 </td>
                                 <td class="border-r border-slate-200 text-center text-slate-400">-</td>
                                 <td class="border-r border-slate-200 text-center text-slate-400">-</td>
@@ -305,14 +321,14 @@
                                         <span x-text="item.name"></span>
                                     </td>
                                     <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-600 bg-slate-50" x-text="item.code"></td>
-                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-500 bg-slate-50" x-text="item.std"></td>
+                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-500 bg-slate-50" x-text="getDefectStd(item)"></td>
                                     
-                                    <!-- Tampilan reject per Velg (read-only, input hanya di Mode Counter Lapangan) -->
+                                    <!-- Tampilan reject/repair per Velg (read-only, input hanya di Mode Counter Lapangan) -->
                                     <template x-for="(velg, vIdx) in velgTypes" :key="'c-val-'+vIdx">
                                         <td class="p-1 border-r border-slate-200 text-center">
                                             <span class="inline-block w-full text-center font-mono py-1 text-xs rounded"
-                                                  :class="velg.casting[item.id] > 0 ? 'bg-amber-50 font-bold text-amber-900' : 'text-slate-400'"
-                                                  x-text="velg.casting[item.id] || 0"></span>
+                                                  :class="getItemValue(vIdx, 'casting', item.id) > 0 ? 'bg-amber-50 font-bold text-amber-900' : 'text-slate-400'"
+                                                  x-text="getItemValue(vIdx, 'casting', item.id)"></span>
                                         </td>
                                     </template>
 
@@ -324,7 +340,7 @@
                             <!-- Subtotal Casting -->
                             <tr class="bg-slate-200/80 font-bold border-b-2 border-slate-400">
                                 <td class="p-2.5 border-r border-slate-300 sticky left-0 bg-slate-200 z-10 text-slate-900">
-                                    SUB TOTAL CASTING
+                                    <span x-text="'SUB TOTAL CASTING' + (qcMode === 'repair' ? ' (REPAIR)' : '')"></span>
                                 </td>
                                 <td class="border-r border-slate-300"></td>
                                 <td class="border-r border-slate-300"></td>
@@ -347,14 +363,14 @@
                                         <span x-text="item.name"></span>
                                     </td>
                                     <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-600 bg-slate-50" x-text="item.code"></td>
-                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-500 bg-slate-50" x-text="item.std"></td>
+                                    <td class="p-1 border-r border-slate-200 text-center font-mono text-slate-500 bg-slate-50" x-text="getDefectStd(item)"></td>
                                     
                                     <!-- Inputs per Velg -->
                                     <template x-for="(velg, vIdx) in velgTypes" :key="'m-val-'+vIdx">
                                         <td class="p-1 border-r border-slate-200 text-center">
                                             <span class="inline-block w-full text-center font-mono py-1 text-xs rounded"
-                                                  :class="velg.machining[item.id] > 0 ? 'bg-amber-50 font-bold text-amber-900' : 'text-slate-400'"
-                                                  x-text="velg.machining[item.id] || 0"></span>
+                                                  :class="getItemValue(vIdx, 'machining', item.id) > 0 ? 'bg-amber-50 font-bold text-amber-900' : 'text-slate-400'"
+                                                  x-text="getItemValue(vIdx, 'machining', item.id)"></span>
                                         </td>
                                     </template>
 
@@ -366,7 +382,7 @@
                             <!-- Subtotal Machining -->
                             <tr class="bg-slate-200/80 font-bold border-b-2 border-slate-400">
                                 <td class="p-2.5 border-r border-slate-300 sticky left-0 bg-slate-200 z-10 text-slate-900">
-                                    SUB TOTAL MACHINING
+                                    <span x-text="'SUB TOTAL MACHINING' + (qcMode === 'repair' ? ' (REPAIR)' : '')"></span>
                                 </td>
                                 <td class="border-r border-slate-300"></td>
                                 <td class="border-r border-slate-300"></td>
@@ -376,10 +392,10 @@
                                 <td class="p-2 text-center font-mono font-bold text-slate-950 bg-slate-300" x-text="calculateGrandSubtotal('machining')"></td>
                             </tr>
 
-                            <!-- GRAND TOTAL REJECT C M -->
+                            <!-- GRAND TOTAL REJECT/REPAIR C M -->
                             <tr class="bg-rose-100 font-bold border-t-2 border-rose-300 text-rose-950 text-sm">
                                 <td class="p-3 border-r border-rose-200 sticky left-0 bg-rose-100 z-10 uppercase">
-                                    TOTAL REJECT C M (CASTING + MACHINING)
+                                    <span x-text="(qcMode === 'repair' ? 'TOTAL REPAIR C M' : 'TOTAL REJECT C M') + ' (CASTING + MACHINING)'"></span>
                                 </td>
                                 <td class="border-r border-rose-200"></td>
                                 <td class="border-r border-rose-200"></td>
@@ -400,17 +416,35 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
                     <div>
                         <h2 class="text-base font-bold text-slate-800">Mode Counter Cepat Operator Lapangan</h2>
-                        <p class="text-xs text-slate-500">Pilih Type Velg lalu tekan tombol + / - untuk menambah hitungan reject.</p>
+                        <p class="text-xs text-slate-500">Pilih Type Velg lalu tekan tombol + / - untuk menambah hitungan <span x-text="qcMode === 'repair' ? 'repair' : 'cacat'"></span> secara langsung saat inspeksi.</p>
                     </div>
 
-                    <!-- Selected Velg Selector -->
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-semibold text-slate-600">Pilih Type Velg:</label>
-                        <select x-model="selectedVelgIndex" class="bg-slate-50 border border-slate-300 font-bold text-brand-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
-                            <template x-for="(v, idx) in velgTypes" :key="idx">
-                                <option :value="idx" x-text="v.name + ' (Total: ' + calculateVelgTotalReject(idx) + ' pcs)'"></option>
-                            </template>
-                        </select>
+                    <div class="flex items-center gap-3">
+                        <!-- Toggle Mode: Reject / Repair -->
+                        <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                            <button @click="qcMode = 'reject'"
+                                    :class="qcMode === 'reject' ? 'bg-rose-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
+                                <i data-lucide="x-octagon" class="w-3.5 h-3.5"></i>
+                                Reject
+                            </button>
+                            <button @click="qcMode = 'repair'"
+                                    :class="qcMode === 'repair' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
+                                <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
+                                Repair
+                            </button>
+                        </div>
+
+                        <!-- Selected Velg Selector -->
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-semibold text-slate-600">Pilih Type Velg:</label>
+                            <select x-model="selectedVelgIndex" class="bg-slate-50 border border-slate-300 font-bold text-brand-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                                <template x-for="(v, idx) in velgTypes" :key="idx">
+                                    <option :value="idx" x-text="v.name + ' (Total: ' + calculateVelgTotalReject(idx) + ' pcs)'"></option>
+                                </template>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -425,25 +459,28 @@
                         <p class="text-sm font-bold text-brand-700" x-text="(velgTypes[selectedVelgIndex]?.totalProd || 0) + ' pcs'"></p>
                     </div>
                     <div>
-                        <span class="text-[10px] text-slate-500 font-medium">Total Reject Saat Ini</span>
+                        <span class="text-[10px] text-slate-500 font-medium" x-text="qcMode === 'repair' ? 'Total Repair Saat Ini' : 'Total Reject Saat Ini'"></span>
                         <p class="text-sm font-bold text-rose-600" x-text="calculateVelgTotalReject(selectedVelgIndex) + ' pcs'"></p>
                     </div>
                     <div>
-                        <span class="text-[10px] text-slate-500 font-medium">Ratio Reject</span>
+                        <span class="text-[10px] text-slate-500 font-medium" x-text="qcMode === 'repair' ? 'Ratio Repair' : 'Ratio Reject'"></span>
                         <p class="text-sm font-bold" :class="getRatioColorClass(calculateVelgRatio(selectedVelgIndex))" x-text="calculateVelgRatio(selectedVelgIndex) + '%'"></p>
                     </div>
                 </div>
 
-                <!-- Top 3 Reject Tertinggi untuk Type Velg yang Aktif -->
+                <!-- Top 3 Reject/Repair Tertinggi untuk Type Velg yang Aktif -->
                 <div class="mb-4 bg-white border border-slate-200 rounded-xl p-3">
                     <div class="flex items-center gap-1.5 mb-2">
                         <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500"></i>
-                        <h3 class="text-xs font-bold text-slate-700">Top 3 Item Reject Tertinggi — <span x-text="velgTypes[selectedVelgIndex]?.name"></span></h3>
+                        <h3 class="text-xs font-bold text-slate-700">
+                            <span x-text="'Top 3 Item ' + (qcMode === 'repair' ? 'Repair' : 'Reject') + ' Tertinggi — '"></span>
+                            <span x-text="velgTypes[selectedVelgIndex]?.name"></span>
+                        </h3>
                         <span class="text-[10px] text-slate-400">(% dari Total Produksi type ini)</span>
                     </div>
 
                     <template x-if="getTop3RejectForVelg(selectedVelgIndex).length === 0">
-                        <p class="text-[11px] text-slate-400 italic">Belum ada data reject untuk type velg ini.</p>
+                        <p class="text-[11px] text-slate-400 italic" x-text="'Belum ada data ' + (qcMode === 'repair' ? 'repair' : 'reject') + ' untuk type velg ini.'"></p>
                     </template>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" x-show="getTop3RejectForVelg(selectedVelgIndex).length > 0">
@@ -492,7 +529,7 @@
                             <div class="mb-2">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono" x-text="item.code"></span>
-                                    <span class="text-[10px] text-slate-400 font-mono" x-text="'Std: ' + item.std"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono" x-text="'Std: ' + getDefectStd(item)"></span>
                                 </div>
                                 <h3 class="text-xs font-semibold text-slate-800 leading-tight" x-text="item.name"></h3>
                             </div>
@@ -521,6 +558,22 @@
 
         <!-- TAB 3: PARETO ANALYSIS & DASHBOARD -->
         <div x-show="activeTab === 'analytics'" class="space-y-6">
+            <div class="flex justify-end no-print">
+                <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <button @click="qcMode = 'reject'"
+                            :class="qcMode === 'reject' ? 'bg-rose-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                            class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
+                        <i data-lucide="x-octagon" class="w-3.5 h-3.5"></i>
+                        Mode Reject
+                    </button>
+                    <button @click="qcMode = 'repair'"
+                            :class="qcMode === 'repair' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-800'"
+                            class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5">
+                        <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
+                        Mode Repair
+                    </button>
+                </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
@@ -534,7 +587,7 @@
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
-                        <span class="text-xs text-slate-500 font-medium">Total Reject (Casting + Machining)</span>
+                        <span class="text-xs text-slate-500 font-medium" x-text="(qcMode === 'repair' ? 'Total Repair' : 'Total Reject') + ' (Casting + Machining)'"></span>
                         <h3 class="text-2xl font-black text-rose-600 font-mono" x-text="calculateGrandTotalReject() + ' pcs'"></h3>
                     </div>
                     <div class="p-3 bg-rose-50 rounded-xl text-rose-600">
@@ -544,7 +597,7 @@
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
-                        <span class="text-xs text-slate-500 font-medium">Rata-rata Ratio Reject</span>
+                        <span class="text-xs text-slate-500 font-medium" x-text="'Rata-rata Ratio ' + (qcMode === 'repair' ? 'Repair' : 'Reject')"></span>
                         <h3 class="text-2xl font-black font-mono" :class="getRatioColorClass(calculateGrandRatio())" x-text="calculateGrandRatio() + '%'"></h3>
                     </div>
                     <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
@@ -560,7 +613,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-600"></i>
-                            Diagram Pareto Top Cacat / Defect
+                            <span x-text="'Diagram Pareto Top ' + (qcMode === 'repair' ? 'Item Repair' : 'Cacat / Defect')"></span>
                         </h3>
                         <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded" title="Persentase dihitung dari Total Produksi Velg">Prinsip 80/20 · % dari Total Produksi</span>
                     </div>
@@ -574,7 +627,7 @@
                     <div class="flex items-center justify-between mb-2">
                         <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="pie-chart" class="w-4 h-4 text-sky-600"></i>
-                            Distribusi Reject: Casting vs Machining
+                            <span x-text="'Distribusi ' + (qcMode === 'repair' ? 'Repair' : 'Reject') + ': Casting vs Machining'"></span>
                         </h3>
                     </div>
                     <!-- Ratio Tags -->
@@ -598,7 +651,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                     <h2 class="text-base font-bold text-slate-800">Riwayat Checksheet Tersimpan</h2>
-                    <p class="text-xs text-slate-500">Daftar inspeksi QC yang tersimpan di memori lokal.</p>
+                    <p class="text-xs text-slate-500">Daftar inspeksi QC yang tersimpan di memori lokal peramban.</p>
                 </div>
                 <button @click="clearAllHistory()" x-show="savedSheets.length > 0" class="text-xs text-rose-600 hover:text-rose-800 underline">
                     Hapus Semua Riwayat
@@ -675,14 +728,18 @@
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Defect / Cacat</label>
                         <input type="text" x-model="newDefectForm.name" placeholder="Contoh: Retak Rambut" class="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-3 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 mb-1">Kode</label>
                             <input type="text" x-model="newDefectForm.code" placeholder="Contoh: RR" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none uppercase">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">STD</label>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">STD Reject</label>
                             <input type="number" min="0" x-model.number="newDefectForm.std" placeholder="0" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">STD Repair</label>
+                            <input type="number" min="0" x-model.number="newDefectForm.stdRepair" placeholder="0" class="w-full text-xs font-medium font-mono border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 outline-none">
                         </div>
                     </div>
                     <p x-show="newDefectFormError" x-text="newDefectFormError" class="text-xs text-rose-600 font-medium"></p>
@@ -803,7 +860,7 @@
         <div class="border-2 border-black p-2">
             <!-- Header section -->
             <div class="text-center font-bold text-sm border-b-2 border-black pb-2 mb-2">
-                LEMBAR PERIKSA CONTROL QUALITY REJECT VELG
+                <span x-text="qcMode === 'repair' ? 'LEMBAR PERIKSA CONTROL QUALITY REPAIR VELG' : 'LEMBAR PERIKSA CONTROL QUALITY REJECT VELG'"></span>
                 <div class="text-xs font-normal flex justify-between px-4 mt-1">
                     <span>Tanggal: <strong x-text="metadata.date"></strong></span>
                     <span>Shift: <strong x-text="metadata.shift"></strong></span>
@@ -818,7 +875,7 @@
                     <tr class="bg-gray-100">
                         <th class="border border-black p-1 text-left">TYPE VELG</th>
                         <th class="border border-black p-1 text-center font-mono">CODE</th>
-                        <th class="border border-black p-1 text-center font-mono">STD</th>
+                        <th class="border border-black p-1 text-center font-mono" x-text="qcMode === 'repair' ? 'STD REPAIR' : 'STD'"></th>
                         <template x-for="velg in velgTypes">
                             <th class="border border-black p-1 text-center font-bold" x-text="velg.name"></th>
                         </template>
@@ -834,7 +891,7 @@
                         <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateGrandTotalProd()"></td>
                     </tr>
                     <tr>
-                        <td class="border border-black p-1 font-bold">Jumlah Reject ( Pcs )</td>
+                        <td class="border border-black p-1 font-bold" x-text="qcMode === 'repair' ? 'Jumlah Repair ( Pcs )' : 'Jumlah Reject ( Pcs )'"></td>
                         <td class="border border-black p-1 text-center">-</td>
                         <td class="border border-black p-1 text-center">-</td>
                         <template x-for="(velg, vIdx) in velgTypes">
@@ -843,7 +900,7 @@
                         <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateGrandTotalReject()"></td>
                     </tr>
                     <tr>
-                        <td class="border border-black p-1 font-bold">Ratio Reject ( % )</td>
+                        <td class="border border-black p-1 font-bold" x-text="qcMode === 'repair' ? 'Ratio Repair ( % )' : 'Ratio Reject ( % )'"></td>
                         <td class="border border-black p-1 text-center">-</td>
                         <td class="border border-black p-1 text-center">-</td>
                         <template x-for="(velg, vIdx) in velgTypes">
@@ -855,21 +912,21 @@
                 <tbody>
                     <!-- CASTING -->
                     <tr class="font-bold bg-gray-200">
-                        <td colspan="100" class="border border-black p-1 text-left">CASTING</td>
+                        <td colspan="100" class="border border-black p-1 text-left" x-text="qcMode === 'repair' ? 'CASTING (REPAIR)' : 'CASTING'"></td>
                     </tr>
                     <template x-for="item in castingDefects">
                         <tr>
                             <td class="border border-black p-1" x-text="item.name"></td>
                             <td class="border border-black p-1 text-center font-mono" x-text="item.code"></td>
-                            <td class="border border-black p-1 text-center font-mono" x-text="item.std"></td>
-                            <template x-for="velg in velgTypes">
-                                <td class="border border-black p-1 text-center font-mono" x-text="velg.casting[item.id] || 0"></td>
+                            <td class="border border-black p-1 text-center font-mono" x-text="getDefectStd(item)"></td>
+                            <template x-for="(velg, vIdx) in velgTypes">
+                                <td class="border border-black p-1 text-center font-mono" x-text="getItemValue(vIdx, 'casting', item.id)"></td>
                             </template>
                             <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateDefectTotal('casting', item.id)"></td>
                         </tr>
                     </template>
                     <tr class="font-bold bg-gray-100">
-                        <td class="border border-black p-1">SUB TOTAL CASTING</td>
+                        <td class="border border-black p-1" x-text="qcMode === 'repair' ? 'SUB TOTAL CASTING (REPAIR)' : 'SUB TOTAL CASTING'"></td>
                         <td class="border border-black p-1"></td>
                         <td class="border border-black p-1"></td>
                         <template x-for="(velg, vIdx) in velgTypes">
@@ -880,21 +937,21 @@
 
                     <!-- MACHINING -->
                     <tr class="font-bold bg-gray-200">
-                        <td colspan="100" class="border border-black p-1 text-left">MACHINING</td>
+                        <td colspan="100" class="border border-black p-1 text-left" x-text="qcMode === 'repair' ? 'MACHINING (REPAIR)' : 'MACHINING'"></td>
                     </tr>
                     <template x-for="item in machiningDefects">
                         <tr>
                             <td class="border border-black p-1" x-text="item.name"></td>
                             <td class="border border-black p-1 text-center font-mono" x-text="item.code"></td>
-                            <td class="border border-black p-1 text-center font-mono" x-text="item.std"></td>
-                            <template x-for="velg in velgTypes">
-                                <td class="border border-black p-1 text-center font-mono" x-text="velg.machining[item.id] || 0"></td>
+                            <td class="border border-black p-1 text-center font-mono" x-text="getDefectStd(item)"></td>
+                            <template x-for="(velg, vIdx) in velgTypes">
+                                <td class="border border-black p-1 text-center font-mono" x-text="getItemValue(vIdx, 'machining', item.id)"></td>
                             </template>
                             <td class="border border-black p-1 text-center font-bold font-mono" x-text="calculateDefectTotal('machining', item.id)"></td>
                         </tr>
                     </template>
                     <tr class="font-bold bg-gray-100">
-                        <td class="border border-black p-1">SUB TOTAL MACHINING</td>
+                        <td class="border border-black p-1" x-text="qcMode === 'repair' ? 'SUB TOTAL MACHINING (REPAIR)' : 'SUB TOTAL MACHINING'"></td>
                         <td class="border border-black p-1"></td>
                         <td class="border border-black p-1"></td>
                         <template x-for="(velg, vIdx) in velgTypes">
@@ -904,7 +961,7 @@
                     </tr>
 
                     <tr class="font-bold bg-gray-300">
-                        <td class="border border-black p-1">TOTAL REJECT C M</td>
+                        <td class="border border-black p-1" x-text="qcMode === 'repair' ? 'TOTAL REPAIR C M' : 'TOTAL REJECT C M'"></td>
                         <td class="border border-black p-1"></td>
                         <td class="border border-black p-1"></td>
                         <template x-for="(velg, vIdx) in velgTypes">
@@ -937,6 +994,7 @@
         function qcApp() {
             return {
                 activeTab: 'matrix',
+                qcMode: 'reject', // 'reject' atau 'repair' - mengganti tampilan item, code, std, dan ratio
                 counterCategory: 'casting',
                 counterSearch: '',
                 selectedVelgIndex: '0',
@@ -945,7 +1003,7 @@
 
                 // Add Reject Item Modal
                 showAddDefectModal: false,
-                newDefectForm: { category: 'casting', name: '', code: '', std: 0 },
+                newDefectForm: { category: 'casting', name: '', code: '', std: 0, stdRepair: 0 },
                 newDefectFormError: '',
 
                 // Add Counter Produk Modal (Type + Produk, akumulasi ke Total Produksi)
@@ -967,54 +1025,53 @@
 
                 // Complete Defect Dictionary transcribed directly from the image
                 castingDefects: [
-                    { id: 'dw', name: 'Dhisuku Ware', code: 'DW', std: 178 },
-                    { id: 'hs', name: 'Habu Su', code: 'HS', std: 119 },
-                    { id: 'yz', name: 'Yu Zakai', code: 'YZ', std: 124 },
-                    { id: 'kr', name: 'Kirai', code: 'KR', std: 112 },
-                    { id: 'rsb', name: 'Rimu Su Bead Inner', code: 'RSB', std: 179 },
-                    { id: 'rso', name: 'Rimu Su Bead Outer', code: 'RSO', std: 118 },
-                    { id: 'rsd', name: 'Rimu Su Dalam', code: 'RSD', std: 180 },
-                    { id: 'rsh', name: 'Rimu Su Hump', code: 'RSH', std: 182 },
-                    { id: 'rs', name: 'Rimu Su Luar', code: 'RS', std: 181 },
-                    { id: 'is', name: 'Ishoumen Su', code: 'IS', std: 113 },
-                    { id: 'bas', name: 'Boruto Ana Su', code: 'BAS', std: 120 },
-                    { id: 'us', name: 'Ura Su', code: 'US', std: 122 },
-                    { id: 'knn', name: 'Kanaami Nokori', code: 'KNN', std: 128 },
-                    { id: 'hkb', name: 'Hike Su', code: 'HKB', std: 123 },
-                    { id: 'fs', name: 'Flange Su Inner', code: 'FS', std: 116 },
-                    { id: 'fo', name: 'Flange Su Outer', code: 'FO', std: 117 },
-                    { id: 'ih', name: 'I Hada Heko', code: 'IH', std: 124 },
-                    { id: 'it', name: 'I Hada Totsu', code: 'IT', std: 125 },
-                    { id: 'bz_c', name: 'Boruto Ana Zure', code: 'BZ', std: 126 },
-                    { id: 'hsk', name: 'Hub Su Cap', code: 'HSK', std: 127 },
-                    { id: 'ik', name: 'Ibutsu Kamikomi', code: 'IK', std: 128 },
-                    { id: 'ksn', name: 'Katsu Niku', code: 'KSN', std: 135 },
-                    { id: 'vs', name: 'Valve Su', code: 'VS', std: 129 },
-                    { id: 'em', name: 'Eaa More', code: 'EM', std: 114 },
-                    { id: 'gb', name: 'Gyaku Bari', code: 'GB', std: 130 },
-                    { id: 'kkn_c', name: 'Kurokawa Hub / Flange (LP)', code: 'KKN', std: 183 },
-                    { id: 'hkf', name: 'Hakidashi Furyou', code: 'HKF', std: 134 },
-                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150 },
-                    { id: 'ds', name: 'Disc Su', code: 'DS', std: 135 }
+                    { id: 'dw', name: 'Dhisuku Ware', code: 'DW', std: 178, stdRepair: 89 },
+                    { id: 'hs', name: 'Habu Su', code: 'HS', std: 119, stdRepair: 60 },
+                    { id: 'yz', name: 'Yu Zakai', code: 'YZ', std: 124, stdRepair: 62 },
+                    { id: 'kr', name: 'Kirai', code: 'KR', std: 112, stdRepair: 56 },
+                    { id: 'rsb', name: 'Rimu Su Bead Inner', code: 'RSB', std: 179, stdRepair: 90 },
+                    { id: 'rso', name: 'Rimu Su Bead Outer', code: 'RSO', std: 118, stdRepair: 59 },
+                    { id: 'rsd', name: 'Rimu Su Dalam', code: 'RSD', std: 180, stdRepair: 90 },
+                    { id: 'rsh', name: 'Rimu Su Hump', code: 'RSH', std: 182, stdRepair: 91 },
+                    { id: 'rs', name: 'Rimu Su Luar', code: 'RS', std: 181, stdRepair: 90 },
+                    { id: 'is', name: 'Ishoumen Su', code: 'IS', std: 113, stdRepair: 56 },
+                    { id: 'bas', name: 'Boruto Ana Su', code: 'BAS', std: 120, stdRepair: 60 },
+                    { id: 'us', name: 'Ura Su', code: 'US', std: 122, stdRepair: 61 },
+                    { id: 'knn', name: 'Kanaami Nokori', code: 'KNN', std: 128, stdRepair: 64 },
+                    { id: 'hkb', name: 'Hike Su', code: 'HKB', std: 123, stdRepair: 62 },
+                    { id: 'fs', name: 'Flange Su Inner', code: 'FS', std: 116, stdRepair: 58 },
+                    { id: 'fo', name: 'Flange Su Outer', code: 'FO', std: 117, stdRepair: 58 },
+                    { id: 'ih', name: 'I Hada Heko', code: 'IH', std: 124, stdRepair: 62 },
+                    { id: 'it', name: 'I Hada Totsu', code: 'IT', std: 125, stdRepair: 62 },
+                    { id: 'bz_c', name: 'Boruto Ana Zure', code: 'BZ', std: 126, stdRepair: 63 },
+                    { id: 'hsk', name: 'Hub Su Cap', code: 'HSK', std: 127, stdRepair: 64 },
+                    { id: 'ik', name: 'Ibutsu Kamikomi', code: 'IK', std: 128, stdRepair: 64 },
+                    { id: 'ksn', name: 'Katsu Niku', code: 'KSN', std: 135, stdRepair: 68 },
+                    { id: 'vs', name: 'Valve Su', code: 'VS', std: 129, stdRepair: 64 },
+                    { id: 'em', name: 'Eaa More', code: 'EM', std: 114, stdRepair: 57 },
+                    { id: 'gb', name: 'Gyaku Bari', code: 'GB', std: 130, stdRepair: 65 },
+                    { id: 'kkn_c', name: 'Kurokawa Hub / Flange (LP)', code: 'KKN', std: 183, stdRepair: 92 },
+                    { id: 'hkf', name: 'Hakidashi Furyou', code: 'HKF', std: 134, stdRepair: 67 },
+                    { id: 'ghd', name: 'Gas Hole area Disc', code: 'GHD', std: 150, stdRepair: 75 }
                 ],
 
                 machiningDefects: [
-                    { id: 'ssf', name: 'Sessaku Furyou', code: 'SSF', std: 141 },
-                    { id: 'bb', name: 'Bibiri Bolt hole', code: 'BB', std: 142 },
-                    { id: 'bv', name: 'Bibiri Valve hole', code: 'BV', std: 165 },
-                    { id: 'sf', name: 'Sunpou Furyou', code: 'SF', std: 143 },
-                    { id: 'dk', name: 'Dakon', code: 'DK', std: 144 },
-                    { id: 'vz', name: 'Valve Zure', code: 'VZ', std: 145 },
-                    { id: 'fz', name: 'Flange Zure', code: 'FZ', std: 146 },
-                    { id: 'bz_m', name: 'Mentori Lub. Baut Depan Zure', code: 'BZ', std: 147 },
-                    { id: 'ktf', name: 'Kako Tenaoshi Furyou', code: 'KTF', std: 148 },
-                    { id: 'kkn_m', name: 'Kurokawa Nokori', code: 'KKN', std: 149 },
-                    { id: 'hf', name: 'Henido Furyou', code: 'HF', std: 150 },
-                    { id: 'bl', name: 'Balance', code: 'BL', std: 157 },
-                    { id: 'ss', name: 'Sessaku Suji', code: 'SS', std: 151 },
-                    { id: 'hk', name: 'Hataki Kizu', code: 'HK', std: 153 },
-                    { id: 'cg', name: 'Chip Gompal', code: 'CG', std: 156 },
-                    { id: 'bi', name: 'Bibiri Rim , Ishoumen', code: 'BI', std: 166 }
+                    { id: 'ssf', name: 'Sessaku Furyou', code: 'SSF', std: 141, stdRepair: 70 },
+                    { id: 'bb', name: 'Bibiri Bolt hole', code: 'BB', std: 142, stdRepair: 71 },
+                    { id: 'bv', name: 'Bibiri Valve hole', code: 'BV', std: 165, stdRepair: 82 },
+                    { id: 'sf', name: 'Sunpou Furyou', code: 'SF', std: 143, stdRepair: 72 },
+                    { id: 'dk', name: 'Dakon', code: 'DK', std: 144, stdRepair: 72 },
+                    { id: 'vz', name: 'Valve Zure', code: 'VZ', std: 145, stdRepair: 72 },
+                    { id: 'fz', name: 'Flange Zure', code: 'FZ', std: 146, stdRepair: 73 },
+                    { id: 'bz_m', name: 'Mentori Lub. Baut Depan Zure', code: 'BZ', std: 147, stdRepair: 74 },
+                    { id: 'ktf', name: 'Kako Tenaoshi Furyou', code: 'KTF', std: 148, stdRepair: 74 },
+                    { id: 'kkn_m', name: 'Kurokawa Nokori', code: 'KKN', std: 149, stdRepair: 74 },
+                    { id: 'hf', name: 'Henido Furyou', code: 'HF', std: 150, stdRepair: 75 },
+                    { id: 'bl', name: 'Balance', code: 'BL', std: 157, stdRepair: 78 },
+                    { id: 'ss', name: 'Sessaku Suji', code: 'SS', std: 151, stdRepair: 76 },
+                    { id: 'hk', name: 'Hataki Kizu', code: 'HK', std: 153, stdRepair: 76 },
+                    { id: 'cg', name: 'Chip Gompal', code: 'CG', std: 156, stdRepair: 78 },
+                    { id: 'bi', name: 'Bibiri Rim , Ishoumen', code: 'BI', std: 166, stdRepair: 83 }
                 ],
 
                 velgTypes: [],
@@ -1054,6 +1111,13 @@
                         }
                     });
 
+                    // Re-render charts saat mode Reject/Repair di-toggle, agar chart & label ikut mode aktif.
+                    this.$watch('qcMode', () => {
+                        if (this.activeTab === 'analytics') {
+                            this.$nextTick(() => this.updateAnalytics());
+                        }
+                    });
+
                     // Refresh Lucide icons
                     this.$nextTick(() => lucide.createIcons());
                 },
@@ -1065,11 +1129,20 @@
                     const machiningObj = {};
                     this.machiningDefects.forEach(d => machiningObj[d.id] = 0);
 
+                    // Data Repair - struktur sama seperti casting/machining reject, tapi disimpan terpisah
+                    const repairCastingObj = {};
+                    this.castingDefects.forEach(d => repairCastingObj[d.id] = 0);
+
+                    const repairMachiningObj = {};
+                    this.machiningDefects.forEach(d => repairMachiningObj[d.id] = 0);
+
                     return {
                         name: name,
                         totalProd: 500,
                         casting: castingObj,
-                        machining: machiningObj
+                        machining: machiningObj,
+                        repairCasting: repairCastingObj,
+                        repairMachining: repairMachiningObj
                     };
                 },
 
@@ -1090,7 +1163,7 @@
                 },
 
                 openAddDefectModal(category = 'casting') {
-                    this.newDefectForm = { category: category, name: '', code: '', std: 0 };
+                    this.newDefectForm = { category: category, name: '', code: '', std: 0, stdRepair: 0 };
                     this.newDefectFormError = '';
                     this.showAddDefectModal = true;
                     this.$nextTick(() => lucide.createIcons());
@@ -1114,6 +1187,7 @@
                     const name = this.newDefectForm.name.trim();
                     const code = this.newDefectForm.code.trim().toUpperCase();
                     const std = this.newDefectForm.std || 0;
+                    const stdRepair = this.newDefectForm.stdRepair || 0;
 
                     if (!name) {
                         this.newDefectFormError = 'Nama defect wajib diisi.';
@@ -1126,7 +1200,7 @@
 
                     const category = this.newDefectForm.category === 'machining' ? 'machining' : 'casting';
                     const newId = this.slugifyDefectId(name + '_' + code);
-                    const newItem = { id: newId, name: name, code: code, std: std };
+                    const newItem = { id: newId, name: name, code: code, std: std, stdRepair: stdRepair };
 
                     if (category === 'casting') {
                         this.castingDefects.push(newItem);
@@ -1134,10 +1208,16 @@
                         this.machiningDefects.push(newItem);
                     }
 
-                    // Ensure every existing velg type has a 0 entry for the new defect item.
+                    // Ensure every existing velg type has a 0 entry for the new defect item,
+                    // baik di data Reject maupun data Repair.
+                    const repairKey = category === 'casting' ? 'repairCasting' : 'repairMachining';
                     this.velgTypes.forEach(velg => {
                         if (velg[category][newId] === undefined) {
                             velg[category][newId] = 0;
+                        }
+                        if (!velg[repairKey]) velg[repairKey] = {};
+                        if (velg[repairKey][newId] === undefined) {
+                            velg[repairKey][newId] = 0;
                         }
                     });
 
@@ -1228,6 +1308,9 @@
                     this.velgTypes[0].casting['hkb'] = 2;
                     this.velgTypes[0].machining['ssf'] = 5;
                     this.velgTypes[0].machining['dk'] = 2;
+                    this.velgTypes[0].repairCasting['dw'] = 2;
+                    this.velgTypes[0].repairCasting['rsb'] = 1;
+                    this.velgTypes[0].repairMachining['ssf'] = 3;
 
                     this.velgTypes[1].totalProd = 600;
                     this.velgTypes[1].casting['hs'] = 6;
@@ -1235,12 +1318,17 @@
                     this.velgTypes[1].casting['rso'] = 1;
                     this.velgTypes[1].machining['bb'] = 4;
                     this.velgTypes[1].machining['bl'] = 3;
+                    this.velgTypes[1].repairCasting['hs'] = 3;
+                    this.velgTypes[1].repairMachining['bb'] = 2;
+                    this.velgTypes[1].repairMachining['bl'] = 1;
 
                     this.velgTypes[2].totalProd = 350;
                     this.velgTypes[2].casting['yz'] = 3;
                     this.velgTypes[2].casting['rsd'] = 5;
                     this.velgTypes[2].machining['sf'] = 2;
                     this.velgTypes[2].machining['cg'] = 1;
+                    this.velgTypes[2].repairCasting['rsd'] = 2;
+                    this.velgTypes[2].repairMachining['sf'] = 1;
                 },
 
                 resetForm() {
@@ -1248,14 +1336,32 @@
                         v.totalProd = 0;
                         Object.keys(v.casting).forEach(k => v.casting[k] = 0);
                         Object.keys(v.machining).forEach(k => v.machining[k] = 0);
+                        if (v.repairCasting) Object.keys(v.repairCasting).forEach(k => v.repairCasting[k] = 0);
+                        if (v.repairMachining) Object.keys(v.repairMachining).forEach(k => v.repairMachining[k] = 0);
                     });
                 },
 
                 // Calculations
+                // Mode-aware helpers: menerjemahkan kategori 'casting'/'machining' ke key data
+                // yang sesuai berdasarkan qcMode aktif ('reject' -> casting/machining,
+                // 'repair' -> repairCasting/repairMachining). Total Produksi & Type Velg TIDAK
+                // ikut berubah, karena keduanya tetap mengikuti inputan awal.
+                getDataKey(category) {
+                    if (this.qcMode === 'repair') {
+                        return category === 'machining' ? 'repairMachining' : 'repairCasting';
+                    }
+                    return category === 'machining' ? 'machining' : 'casting';
+                },
+
+                // Mengambil std sesuai mode aktif (std reject vs stdRepair) untuk sebuah defect item.
+                getDefectStd(item) {
+                    return this.qcMode === 'repair' ? (item.stdRepair ?? 0) : (item.std ?? 0);
+                },
+
                 calculateSubtotal(velgIdx, category) {
                     const velg = this.velgTypes[velgIdx];
                     if (!velg) return 0;
-                    const items = velg[category];
+                    const items = velg[this.getDataKey(category)] || {};
                     return Object.values(items).reduce((sum, val) => sum + (Number(val) || 0), 0);
                 },
 
@@ -1286,7 +1392,8 @@
                 },
 
                 calculateDefectTotal(category, defectId) {
-                    return this.velgTypes.reduce((sum, v) => sum + (Number(v[category][defectId]) || 0), 0);
+                    const key = this.getDataKey(category);
+                    return this.velgTypes.reduce((sum, v) => sum + (Number((v[key] || {})[defectId]) || 0), 0);
                 },
 
                 calculateGrandSubtotal(category) {
@@ -1309,16 +1416,18 @@
 
                     const totalProd = Number(velg.totalProd) || 0;
                     const combined = [];
+                    const castingKey = this.getDataKey('casting');
+                    const machiningKey = this.getDataKey('machining');
 
                     this.castingDefects.forEach(d => {
-                        const count = Number(velg.casting[d.id]) || 0;
+                        const count = Number((velg[castingKey] || {})[d.id]) || 0;
                         if (count > 0) {
                             combined.push({ name: d.name, code: d.code, count: count, category: 'Casting' });
                         }
                     });
 
                     this.machiningDefects.forEach(d => {
-                        const count = Number(velg.machining[d.id]) || 0;
+                        const count = Number((velg[machiningKey] || {})[d.id]) || 0;
                         if (count > 0) {
                             combined.push({ name: d.name, code: d.code, count: count, category: 'Machining' });
                         }
@@ -1338,10 +1447,12 @@
                     return 'text-emerald-600 font-bold';
                 },
 
-                // Quick Counter Helpers
+                // Quick Counter Helpers (mode-aware: reject atau repair sesuai qcMode aktif)
                 getItemValue(velgIdx, category, defectId) {
                     const velg = this.velgTypes[velgIdx];
-                    return velg ? (velg[category][defectId] || 0) : 0;
+                    if (!velg) return 0;
+                    const key = this.getDataKey(category);
+                    return (velg[key] || {})[defectId] || 0;
                 },
 
                 // Displays the item value for the currently selected velg type.
@@ -1352,9 +1463,11 @@
                 adjustDefectCount(velgIdx, category, defectId, amount) {
                     const velg = this.velgTypes[velgIdx];
                     if (velg) {
-                        const current = velg[category][defectId] || 0;
+                        const key = this.getDataKey(category);
+                        if (!velg[key]) velg[key] = {};
+                        const current = velg[key][defectId] || 0;
                         const nextVal = Math.max(0, current + amount);
-                        velg[category][defectId] = nextVal;
+                        velg[key][defectId] = nextVal;
                     }
                 },
 
@@ -1425,9 +1538,9 @@
                             data: {
                                 labels: labels.length ? labels : ['Belum ada data'],
                                 datasets: [{
-                                    label: 'Jumlah Reject (Pcs)',
+                                    label: (this.qcMode === 'repair' ? 'Jumlah Repair (Pcs)' : 'Jumlah Reject (Pcs)'),
                                     data: counts.length ? counts : [0],
-                                    backgroundColor: '#0284c7',
+                                    backgroundColor: this.qcMode === 'repair' ? '#059669' : '#0284c7',
                                     borderRadius: 6
                                 }]
                             },
@@ -1563,16 +1676,17 @@
                 exportToExcel() {
                     const wb = XLSX.utils.book_new();
                     const sheetData = [];
+                    const modeLabel = this.qcMode === 'repair' ? 'REPAIR' : 'REJECT';
 
                     // Header Rows
-                    sheetData.push(["CONTROL QUALITY REJECT VELG SHEET"]);
+                    sheetData.push([`CONTROL QUALITY ${modeLabel} VELG SHEET`]);
                     sheetData.push(["Tanggal:", this.metadata.date, "Shift:", this.metadata.shift, "Line:", this.metadata.line, "Inspektor:", this.metadata.inspector]);
                     sheetData.push([]);
 
                     // Table Headers
-                    const headerRow = ["NAMA DEFECT / CACAT", "CODE", "STD"];
+                    const headerRow = ["NAMA DEFECT / CACAT", "CODE", this.qcMode === 'repair' ? "STD REPAIR" : "STD"];
                     this.velgTypes.forEach(v => headerRow.push(v.name));
-                    headerRow.push("TOTAL REJECT");
+                    headerRow.push(`TOTAL ${modeLabel}`);
                     sheetData.push(headerRow);
 
                     // Row: Total Prod
@@ -1581,57 +1695,57 @@
                     prodRow.push(this.calculateGrandTotalProd());
                     sheetData.push(prodRow);
 
-                    // Row: Total Reject
-                    const rejectRow = ["Jumlah Reject (Pcs)", "-", "-"];
+                    // Row: Total Reject/Repair
+                    const rejectRow = [`Jumlah ${modeLabel} (Pcs)`, "-", "-"];
                     this.velgTypes.forEach((_, idx) => rejectRow.push(this.calculateVelgTotalReject(idx)));
                     rejectRow.push(this.calculateGrandTotalReject());
                     sheetData.push(rejectRow);
 
                     // Row: Ratio
-                    const ratioRow = ["Ratio Reject (%)", "-", "-"];
+                    const ratioRow = [`Ratio ${modeLabel} (%)`, "-", "-"];
                     this.velgTypes.forEach((_, idx) => ratioRow.push(this.calculateVelgRatio(idx) + "%"));
                     ratioRow.push(this.calculateGrandRatio() + "%");
                     sheetData.push(ratioRow);
 
                     // Casting Defects
-                    sheetData.push(["--- CASTING DEFECTS ---"]);
+                    sheetData.push([`--- CASTING ${modeLabel === 'REPAIR' ? 'DEFECTS (REPAIR)' : 'DEFECTS'} ---`]);
                     this.castingDefects.forEach(d => {
-                        const row = [d.name, d.code, d.std];
-                        this.velgTypes.forEach(v => row.push(v.casting[d.id] || 0));
+                        const row = [d.name, d.code, this.getDefectStd(d)];
+                        this.velgTypes.forEach((v, idx) => row.push(this.getItemValue(idx, 'casting', d.id)));
                         row.push(this.calculateDefectTotal('casting', d.id));
                         sheetData.push(row);
                     });
 
                     // Subtotal Casting
-                    const subCastingRow = ["SUB TOTAL CASTING", "", ""];
+                    const subCastingRow = [modeLabel === 'REPAIR' ? "SUB TOTAL CASTING (REPAIR)" : "SUB TOTAL CASTING", "", ""];
                     this.velgTypes.forEach((_, idx) => subCastingRow.push(this.calculateSubtotal(idx, 'casting')));
                     subCastingRow.push(this.calculateGrandSubtotal('casting'));
                     sheetData.push(subCastingRow);
 
                     // Machining Defects
-                    sheetData.push(["--- MACHINING DEFECTS ---"]);
+                    sheetData.push([`--- MACHINING ${modeLabel === 'REPAIR' ? 'DEFECTS (REPAIR)' : 'DEFECTS'} ---`]);
                     this.machiningDefects.forEach(d => {
-                        const row = [d.name, d.code, d.std];
-                        this.velgTypes.forEach(v => row.push(v.machining[d.id] || 0));
+                        const row = [d.name, d.code, this.getDefectStd(d)];
+                        this.velgTypes.forEach((v, idx) => row.push(this.getItemValue(idx, 'machining', d.id)));
                         row.push(this.calculateDefectTotal('machining', d.id));
                         sheetData.push(row);
                     });
 
                     // Subtotal Machining
-                    const subMachiningRow = ["SUB TOTAL MACHINING", "", ""];
+                    const subMachiningRow = [modeLabel === 'REPAIR' ? "SUB TOTAL MACHINING (REPAIR)" : "SUB TOTAL MACHINING", "", ""];
                     this.velgTypes.forEach((_, idx) => subMachiningRow.push(this.calculateSubtotal(idx, 'machining')));
                     subMachiningRow.push(this.calculateGrandSubtotal('machining'));
                     sheetData.push(subMachiningRow);
 
                     // Grand Total
-                    const grandRow = ["TOTAL REJECT C M", "", ""];
+                    const grandRow = [`TOTAL ${modeLabel} C M`, "", ""];
                     this.velgTypes.forEach((_, idx) => grandRow.push(this.calculateVelgTotalReject(idx)));
                     grandRow.push(this.calculateGrandTotalReject());
                     sheetData.push(grandRow);
 
                     const ws = XLSX.utils.aoa_to_sheet(sheetData);
-                    XLSX.utils.book_append_sheet(wb, ws, "QC_Reject_Velg");
-                    XLSX.writeFile(wb, `QC_Velg_Reject_${this.metadata.date}_Shift${this.metadata.shift}.xlsx`);
+                    XLSX.utils.book_append_sheet(wb, ws, `QC_${modeLabel}_Velg`);
+                    XLSX.writeFile(wb, `QC_Velg_${modeLabel}_${this.metadata.date}_Shift${this.metadata.shift}.xlsx`);
                 },
 
                 printSheet() {
